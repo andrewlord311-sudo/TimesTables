@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Pip's Times Tables</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HOME -->
+<section id="screen-home" class="screen active">
+  <h1>🐹 Pip's Times Tables</h1>
+  <p class="subtitle">Tap a game to start!</p>
+
+  <div class="farm-wrap">
+    <h2 class="farm-title">Guinea Pig Farm</h2>
+    <div class="farm-grid" id="farm-grid"></div>
+  </div>
+
+  <div class="home-buttons">
+    <button class="game-tile" data-game="feed">
+      <span class="tile-emoji">🥕</span>
+      <span>Feed<br>Pip</span>
+    </button>
+    <button class="game-tile" data-game="jigsaw">
+      <span class="tile-emoji">🧩</span>
+      <span>Guinea Pig<br>Jigsaw</span>
+    </button>
+  </div>
+</section>
+
+<!-- FEED PIP -->
+<section id="screen-feed" class="screen">
+  <button class="back-btn" data-back>←</button>
+  <div class="stage-row" id="feed-stages"></div>
+  <div class="progress-dots" id="feed-dots"></div>
+
+  <div class="pip-stage">
+    <div class="pip" id="feed-pip"></div>
+  </div>
+
+  <div class="question" id="feed-question">3 × 4 = ?</div>
+  <div class="answer-choices" id="feed-choices"></div>
+</section>
+
+<!-- GUINEA PIG JIGSAW -->
+<section id="screen-jigsaw" class="screen">
+  <button class="back-btn" data-back>←</button>
+  <div class="stage-row" id="jigsaw-stages"></div>
+
+  <div class="jigsaw-stage">
+    <div class="jigsaw-pic" id="jigsaw-pic"></div>
+    <div class="jigsaw-grid" id="jigsaw-grid"></div>
+  </div>
+
+  <div class="question" id="jigsaw-question">3 × 4 = ?</div>
+  <div class="answer-choices" id="jigsaw-choices"></div>
+</section>
+
+<!-- COMPLETE -->
+<section id="screen-complete" class="screen">
+  <div class="complete-card">
+    <div class="complete-emoji" id="complete-emoji">⭐️🎉⭐️</div>
+    <h2 id="complete-title">You did it!</h2>
+    <p id="complete-message"></p>
+    <div class="new-pig-reveal hidden" id="new-pig-reveal">
+      <p class="new-pig-label">New guinea pig unlocked!</p>
+      <div class="new-pig-avatar" id="new-pig-avatar"></div>
+      <p class="new-pig-name" id="new-pig-name"></p>
+    </div>
+    <div class="complete-buttons">
+      <button class="big-btn" id="play-again-btn">Play Again</button>
+      <button class="big-btn secondary" id="home-btn">Home</button>
+    </div>
+  </div>
+</section>
+
+<script src="app.js"></script>
+</body>
+</html>

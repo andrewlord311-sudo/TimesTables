@@ -1,0 +1,167 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Trebuchet MS', 'Chalkboard SE', 'Comic Sans MS', sans-serif;
+  background: linear-gradient(160deg, #fdf3e0, #eaf6e8);
+  color: #2b2b2b;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  padding: 20px;
+  position: relative;
+  overflow-y: auto;
+}
+.screen.active { display: flex; }
+
+h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
+.subtitle { font-size: 18px; color: #555; margin: 0 0 18px; }
+
+/* Farm collection (home screen) */
+.farm-wrap { width: 100%; max-width: 480px; margin-bottom: 20px; }
+.farm-title { font-size: 18px; text-align: center; margin: 0 0 10px; color: #6b4c2a; }
+.farm-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  background: white; border-radius: 20px; padding: 14px;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.06);
+}
+.farm-slot-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.farm-slot {
+  width: 100%; aspect-ratio: 1; border-radius: 14px;
+  background: #f5efe0; display: flex; align-items: center; justify-content: center;
+  padding: 6px;
+}
+.farm-slot.locked { background: #eae5d8; }
+.farm-slot .pig-svg { width: 100%; height: 100%; }
+.lock-icon { font-size: 22px; opacity: 0.5; }
+.farm-slot-label { font-size: 10px; font-weight: bold; color: #6b4c2a; text-align: center; }
+
+/* Home */
+.home-buttons { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.game-tile {
+  width: 180px; height: 190px;
+  border: none; border-radius: 28px;
+  background: white;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.08);
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: bold;
+  color: #2b2b2b;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.game-tile:active { transform: scale(0.94); }
+.tile-emoji { font-size: 56px; }
+
+/* Back button */
+.back-btn {
+  position: absolute; top: 16px; left: 16px;
+  width: 48px; height: 48px; border-radius: 50%;
+  border: none; background: white; font-size: 22px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.08);
+  cursor: pointer; z-index: 5;
+}
+
+/* Stage selector row (7 stages) */
+.stage-row { display: flex; gap: 6px; margin: 44px 0 6px; flex-wrap: wrap; justify-content: center; }
+.stage-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: none; font-family: inherit; font-weight: bold; font-size: 14px;
+  background: #e5ddc8; color: #6b4c2a; cursor: pointer;
+}
+.stage-btn.active { background: #f4a83f; color: white; box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
+
+/* Progress dots */
+.progress-dots { display: flex; gap: 8px; margin-bottom: 6px; }
+.progress-dots .dot { width: 14px; height: 14px; border-radius: 50%; background: #ddd; transition: background 0.2s ease, transform 0.2s ease; }
+.progress-dots .dot.done { background: #6bcB77; transform: scale(1.15); }
+
+/* Pip the guinea pig */
+.pip-stage { margin: 6px 0; }
+.pip { width: 180px; height: 150px; transition: transform 0.15s ease; }
+.pip .pig-svg { width: 100%; height: 100%; }
+.pip.munch { animation: munch-bounce 0.5s ease; }
+@keyframes munch-bounce { 0% { transform: scale(1); } 40% { transform: scale(1.1) rotate(-3deg); } 100% { transform: scale(1); } }
+
+/* Question + number choices */
+.question { font-size: 30px; font-weight: bold; margin: 10px 0; color: #4a3728; }
+.answer-choices { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.choice-btn {
+  width: 84px; height: 84px;
+  font-size: 30px; font-weight: bold;
+  font-family: inherit;
+  border: none; border-radius: 20px;
+  background: #ffd166;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+  cursor: pointer;
+  color: #2b2b2b;
+  transition: transform 0.1s ease;
+}
+.choice-btn:active { transform: scale(0.92); }
+.choice-btn.correct-flash { background: #6bcB77; }
+.choice-btn.wrong-flash { background: #ff8787; animation: shake 0.4s ease; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+/* Jigsaw */
+.jigsaw-stage {
+  position: relative;
+  width: 280px; height: 190px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.08);
+  margin: 10px 0;
+  background: #fff;
+}
+.jigsaw-pic { width: 100%; height: 100%; }
+.jigsaw-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.jigsaw-grid {
+  position: absolute; inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 3px;
+}
+.jigsaw-tile {
+  background: #cdbf9a;
+  border: 3px solid #fdf3e0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+.jigsaw-tile.revealed { transform: scale(0.001); opacity: 0; pointer-events: none; }
+
+/* Complete */
+.complete-card {
+  background: white; border-radius: 30px; padding: 32px 40px;
+  text-align: center; box-shadow: 0 10px 0 rgba(0,0,0,0.08);
+  max-width: 340px;
+}
+.complete-emoji { font-size: 44px; margin-bottom: 8px; }
+.new-pig-reveal { margin-top: 14px; padding-top: 14px; border-top: 2px dashed #e5ddc8; }
+.new-pig-reveal.hidden { display: none; }
+.new-pig-label { font-size: 13px; font-weight: bold; color: #6b4c2a; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+.new-pig-avatar { width: 120px; height: 96px; margin: 0 auto; }
+.new-pig-avatar .pig-svg { width: 100%; height: 100%; }
+.new-pig-name { font-size: 18px; font-weight: bold; color: #4a3728; margin: 6px 0 0; }
+.complete-buttons { display: flex; gap: 14px; justify-content: center; margin-top: 18px; }
+.big-btn {
+  font-family: inherit; font-size: 18px; font-weight: bold;
+  padding: 14px 24px; border: none; border-radius: 20px;
+  background: #6bcB77; color: white; cursor: pointer;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.1);
+}
+.big-btn.secondary { background: #ffd166; color: #2b2b2b; }
+.big-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.1); }

@@ -40,7 +40,7 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
   padding: 6px;
 }
 .farm-slot.locked { background: #eae5d8; }
-.farm-slot .pig-svg { width: 100%; height: 100%; }
+.farm-slot .pig-tint, .farm-slot .pig-svg { width: 100%; height: 100%; }
 .lock-icon { font-size: 22px; opacity: 0.5; }
 .farm-slot-label { font-size: 10px; font-weight: bold; color: #6b4c2a; text-align: center; }
 
@@ -87,10 +87,29 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
 
 /* Pip the guinea pig */
 .pip-stage { margin: 6px 0; }
-.pip { width: 180px; height: 150px; transition: transform 0.15s ease; }
-.pip .pig-svg { width: 100%; height: 100%; }
-.pip.munch { animation: munch-bounce 0.5s ease; }
-@keyframes munch-bounce { 0% { transform: scale(1); } 40% { transform: scale(1.1) rotate(-3deg); } 100% { transform: scale(1); } }
+.pip { width: 180px; height: 150px; }
+.pip .pig-tint, .pip .pig-svg { width: 100%; height: 100%; }
+
+.pip.idle { animation: pip-idle 2.2s ease-in-out infinite; }
+@keyframes pip-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.pip.happy { animation: pip-happy 0.7s cubic-bezier(.34,1.56,.64,1); }
+@keyframes pip-happy {
+  0% { transform: scale(1) rotate(0) translateY(0); }
+  30% { transform: scale(1.15) rotate(-5deg) translateY(-16px); }
+  60% { transform: scale(1.05) rotate(4deg) translateY(-6px); }
+  100% { transform: scale(1) rotate(0) translateY(0); }
+}
+
+.pip.sad { animation: pip-sad 0.5s ease-in-out; }
+@keyframes pip-sad {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-8px) rotate(-5deg); }
+  75% { transform: translateX(8px) rotate(5deg); }
+}
 
 /* Question + number choices */
 .question { font-size: 30px; font-weight: bold; margin: 10px 0; color: #4a3728; }
@@ -154,7 +173,7 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
 .new-pig-reveal.hidden { display: none; }
 .new-pig-label { font-size: 13px; font-weight: bold; color: #6b4c2a; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.03em; }
 .new-pig-avatar { width: 120px; height: 96px; margin: 0 auto; }
-.new-pig-avatar .pig-svg { width: 100%; height: 100%; }
+.new-pig-avatar .pig-tint, .new-pig-avatar .pig-svg { width: 100%; height: 100%; }
 .new-pig-name { font-size: 18px; font-weight: bold; color: #4a3728; margin: 6px 0 0; }
 .complete-buttons { display: flex; gap: 14px; justify-content: center; margin-top: 18px; }
 .big-btn {

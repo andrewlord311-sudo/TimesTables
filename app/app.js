@@ -873,8 +873,28 @@ document.getElementById('grownups-btn').addEventListener('click', () => {
     hidden ? 'Hide' : 'For grown-ups';
 });
 
+// ---- Deep links ----
+// The arcade hub lists the three games as separate cards, so each has to be
+// reachable directly: ?game=feed | jigsaw | run. Anything else, or no
+// parameter at all, opens the home screen exactly as before -- and the back
+// and Home buttons still work, so arriving by deep link is never a dead end.
+const DEEP_LINKS = { feed: startFeedGame, jigsaw: startJigsawGame, run: startRunGame };
+
+// Arriving by deep link means no game tile was ever tapped, and tapping a
+// tile is what used to resume the AudioContext (browsers refuse to start
+// audio without a user gesture). Without this the chimes are silent for the
+// whole session. The first touch anywhere does the job instead.
+function unlockAudio() {
+  if (actx.state === 'suspended') actx.resume();
+  document.removeEventListener('pointerdown', unlockAudio);
+}
+document.addEventListener('pointerdown', unlockAudio);
+
 // ---- Init ----
 buildPad('feed', (n, btn) => handleFeedAnswer(n, btn));
 buildPad('jigsaw', (n, btn) => handleJigsawAnswer(n, btn));
 buildPad('run', (n, btn) => handleRunAnswer(n, btn));
 renderFarm();
+
+const deepLink = new URLSearchParams(location.search).get('game');
+if (deepLink && DEEP_LINKS[deepLink]) DEEP_LINKS[deepLink]();

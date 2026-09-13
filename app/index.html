@@ -32,6 +32,10 @@
       <span class="tile-emoji">🧩</span>
       <span>Guinea Pig<br>Jigsaw</span>
     </button>
+    <button class="game-tile" data-game="run">
+      <span class="tile-emoji">🏃</span>
+      <span>Guinea Pig<br>Run</span>
+    </button>
   </div>
 </section>
 
@@ -70,6 +74,33 @@
     <div class="keypad" id="jigsaw-keypad"></div>
     <button class="stuck-btn" id="jigsaw-stuck">Stuck? Show me three answers</button>
     <div class="answer-choices hidden" id="jigsaw-choices"></div>
+  </div>
+</section>
+
+<!-- GUINEA PIG RUN -->
+<!-- Year 3 target only: the 2, 5 and 10 tables, multipliers 1-12. Ten
+     questions, none repeated, mixed across all three. The run is timed, but
+     the clock is never on screen - see finishRun() in app.js. -->
+<section id="screen-run" class="screen">
+  <button class="back-btn" data-back>←</button>
+  <h2 class="run-title">🏃 Guinea Pig Run</h2>
+
+  <div class="run-track" id="run-track">
+    <div class="run-sky"></div>
+    <div class="run-obstacles" id="run-obstacles"></div>
+    <div class="run-finish">🏁</div>
+    <div class="run-pig" id="run-pig"></div>
+    <div class="run-ground"></div>
+  </div>
+
+  <div class="progress-dots" id="run-dots"></div>
+
+  <div class="question" id="run-question">2 × 4 = ?</div>
+  <div class="answer-area">
+    <div class="typed" id="run-typed"></div>
+    <div class="keypad" id="run-keypad"></div>
+    <button class="stuck-btn" id="run-stuck">Stuck? Show me three answers</button>
+    <div class="answer-choices hidden" id="run-choices"></div>
   </div>
 </section>
 

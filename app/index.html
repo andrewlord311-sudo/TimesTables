@@ -18,6 +18,11 @@
     <div class="farm-grid" id="farm-grid"></div>
   </div>
 
+  <!-- For Andrew and Laura, not Clara: which facts still need work. Hidden
+       behind a tap so it never competes with the game for her attention. -->
+  <button class="grownups-btn" id="grownups-btn">For grown-ups</button>
+  <div class="grownups-panel hidden" id="grownups-panel"></div>
+
   <div class="home-buttons">
     <button class="game-tile" data-game="feed">
       <span class="tile-emoji">🥕</span>
@@ -41,7 +46,12 @@
   </div>
 
   <div class="question" id="feed-question">3 × 4 = ?</div>
-  <div class="answer-choices" id="feed-choices"></div>
+  <div class="answer-area">
+    <div class="typed" id="feed-typed"></div>
+    <div class="keypad" id="feed-keypad"></div>
+    <button class="stuck-btn" id="feed-stuck">Stuck? Show me three answers</button>
+    <div class="answer-choices hidden" id="feed-choices"></div>
+  </div>
 </section>
 
 <!-- GUINEA PIG JIGSAW -->
@@ -49,13 +59,18 @@
   <button class="back-btn" data-back>←</button>
   <div class="stage-row" id="jigsaw-stages"></div>
 
-  <div class="jigsaw-stage">
+  <div class="jigsaw-stage" id="jigsaw-stage-box">
     <div class="jigsaw-pic" id="jigsaw-pic"></div>
     <div class="jigsaw-grid" id="jigsaw-grid"></div>
   </div>
 
   <div class="question" id="jigsaw-question">3 × 4 = ?</div>
-  <div class="answer-choices" id="jigsaw-choices"></div>
+  <div class="answer-area">
+    <div class="typed" id="jigsaw-typed"></div>
+    <div class="keypad" id="jigsaw-keypad"></div>
+    <button class="stuck-btn" id="jigsaw-stuck">Stuck? Show me three answers</button>
+    <div class="answer-choices hidden" id="jigsaw-choices"></div>
+  </div>
 </section>
 
 <!-- COMPLETE -->

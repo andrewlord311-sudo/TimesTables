@@ -126,6 +126,75 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
   transition: transform 0.1s ease;
 }
 .choice-btn:active { transform: scale(0.92); }
+
+/* ---- Typed answer + keypad (the default way to answer) ---- */
+.answer-area { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+.typed {
+  min-width: 150px; height: 58px; line-height: 58px;
+  font-size: 34px; font-weight: bold;
+  border-radius: 16px;
+  background: #fffdf7;
+  border: 3px dashed #e0cfa8;
+  color: #4a3728;
+  padding: 0 18px;
+  text-align: center;
+}
+.typed.empty { color: #c9bda6; }
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 74px);
+  gap: 10px;
+}
+.key {
+  height: 62px;
+  font-size: 27px; font-weight: bold;
+  font-family: inherit;
+  border: none; border-radius: 16px;
+  background: #fff3d6;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+  color: #4a3728;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+.key:active { transform: scale(0.93); }
+.key-go { background: #6bcB77; color: #fff; }
+.key-del { background: #f0e2c8; }
+
+.stuck-btn {
+  font-family: inherit; font-size: 15px;
+  border: none; background: none;
+  color: #8a7757; text-decoration: underline;
+  padding: 6px 10px; cursor: pointer;
+}
+.stuck-btn.hidden { display: none; }
+.answer-choices.hidden { display: none; }
+
+/* ---- Grown-ups panel (home screen, tucked away) ---- */
+.grownups-btn {
+  margin-top: 14px;
+  font-family: inherit; font-size: 13px;
+  border: none; background: none;
+  color: #9a8a70; text-decoration: underline;
+  cursor: pointer;
+}
+.grownups-panel {
+  margin-top: 8px; max-width: 460px;
+  background: #fffdf7; border: 1px solid #e8dcc4; border-radius: 14px;
+  padding: 12px 14px; font-size: 13px; color: #5a4a33;
+}
+.grownups-panel.hidden { display: none; }
+.grownups-summary { margin: 0 0 8px; }
+.grownups-empty { margin: 0; color: #9a8a70; }
+.grownups-facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.shaky {
+  display: inline-flex; flex-direction: column; align-items: center;
+  border-radius: 9px; padding: 4px 8px; font-weight: bold; line-height: 1.25;
+}
+.shaky em { font-style: normal; font-weight: normal; font-size: 10px; opacity: 0.75; }
+.shaky.wrong { background: #ffe0e0; color: #a33; }
+.shaky.slow { background: #fff0d4; color: #8a6a1f; }
 .choice-btn.correct-flash { background: #6bcB77; }
 .choice-btn.wrong-flash { background: #ff8787; animation: shake 0.4s ease; }
 @keyframes shake {
@@ -143,6 +212,14 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
   box-shadow: 0 8px 0 rgba(0,0,0,0.08);
   margin: 10px 0;
   background: #fff;
+}
+/* A portrait photo in the landscape frame gets centre-cropped, which on the
+   Clara-and-Evie picture cuts her head off. Portrait sources get a portrait
+   frame instead, and the 3x2 tile grid becomes 2x3 so the tiles stay square. */
+.jigsaw-stage.portrait { width: 232px; height: 300px; }
+.jigsaw-stage.portrait .jigsaw-grid {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
 }
 .jigsaw-pic { width: 100%; height: 100%; }
 .jigsaw-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }

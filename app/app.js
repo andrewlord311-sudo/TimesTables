@@ -13,19 +13,20 @@ const STAGES = [
 ];
 const MAX_MULTIPLIER = 12;
 const ROUNDS_PER_SESSION = 8;
-// A stage counts as "cleared" (and unlocks its guinea pig) once this many
-// correct answers land in a single session - matches the "8 in a row"
-// completion convention used across the sibling Nuggets/Phonics apps.
-const ROUNDS_TO_CLEAR_STAGE = 8;
 
 // ---- Guinea pig farm - 7 collectible pigs, one per stage ----
 // All share the same base artwork (GUINEA_PIG_SVG below); each pig gets a
 // distinct look via a CSS filter rather than separate hand-colored art.
+// Stages 1 and 2 are Clara's OWN guinea pigs, so the first thing she unlocks
+// is something she actually knows. The remaining five stay invented friends
+// she collects. Evie is cream/pale yellow (see the 6.9.26 photo); Dreamy's
+// filter is a guess from the same photo's background and is one line to
+// change. Squeaky is deliberately not here.
 const FARM_PIGS = [
-  { id: 1, name: 'Butterscotch', filter: 'none' },
-  { id: 2, name: 'Domino', filter: 'grayscale(0.7) brightness(1.15)' },
-  { id: 3, name: 'Smokey', filter: 'grayscale(1) brightness(0.85)' },
-  { id: 4, name: 'Panda', filter: 'grayscale(1) brightness(0.55) contrast(1.3)' },
+  { id: 1, name: 'Dreamy', real: true, filter: 'grayscale(0.55) brightness(0.78)' },
+  { id: 2, name: 'Evie', real: true, filter: 'brightness(1.32) saturate(0.55)' },
+  { id: 3, name: 'Butterscotch', filter: 'none' },
+  { id: 4, name: 'Smokey', filter: 'grayscale(1) brightness(0.85)' },
   { id: 5, name: 'Marmalade', filter: 'hue-rotate(-20deg) saturate(1.4)' },
   { id: 6, name: 'Marshmallow', filter: 'grayscale(0.5) brightness(1.25)' },
   { id: 7, name: 'Biscuit', filter: 'sepia(0.4) hue-rotate(-10deg)' },
@@ -209,10 +210,93 @@ document.getElementById('play-again-btn').addEventListener('click', () => {
   else startJigsawGame();
 });
 
+// ---- What Clara actually finds hard ----
+// Every fact (7x8, 3x4, ...) gets its own little record, so questions can be
+// weighted towards the ones she misses instead of drawn uniformly at random.
+// Without this, 2x1 comes up exactly as often as 7x8 forever.
+//
+// The mastery signal is HOW LONG a correct answer took, not just whether it
+// was right: answering 7x8 correctly after six seconds means she counted it
+// up, and it should keep coming back; answering in one second means she knows
+// it. The timer is never shown -- visible clocks mostly just make children
+// anxious, and the information is just as good collected quietly.
+const FACTS_KEY = 'ttg_facts';
+const factKey = (t, m) => `${t}x${m}`;
+
+function loadFacts() {
+  try { return JSON.parse(localStorage.getItem(FACTS_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveFacts(f) { localStorage.setItem(FACTS_KEY, JSON.stringify(f)); }
+
+function recordAttempt(table, multiplier, correct, ms, helped) {
+  const facts = loadFacts();
+  const k = factKey(table, multiplier);
+  const rec = facts[k] || { attempts: 0, correct: 0, avgMs: 0, lastWrong: false, helped: 0 };
+  rec.attempts++;
+  if (helped) rec.helped++;
+  if (correct) {
+    rec.correct++;
+    // Weighted running average, so recent attempts matter more than the
+    // first nervous one.
+    rec.avgMs = rec.avgMs ? Math.round(rec.avgMs * 0.6 + ms * 0.4) : ms;
+    // Needing the choices counts as not knowing it, even though the answer
+    // she then tapped was right.
+    rec.lastWrong = !!helped;
+  } else {
+    rec.lastWrong = true;
+  }
+  facts[k] = rec;
+  saveFacts(facts);
+}
+
+// How badly a fact needs practice. Deliberately coarse -- this only has to
+// put the shaky ones in front of her more often, not model her memory.
+//
+// The ORDER matters and was got wrong first time: struggling has to outrank
+// novelty. With "unseen" above "slow", a fact she could only reach by
+// counting on her fingers came up LESS often than one she had never been
+// asked (measured: 0.9% against 2.1%), which is precisely backwards. Never
+// seen still ranks above comfortably known, so new facts keep being
+// introduced -- it just no longer outranks a fact she is visibly struggling
+// with.
+function factWeight(rec) {
+  if (!rec || !rec.attempts) return 4;     // never asked - keep introducing these
+  if (rec.lastWrong) return 14;            // missed it, or needed help, last time
+  if (rec.avgMs > 6000) return 8;          // right, but she clearly worked it out
+  if (rec.avgMs > 3500) return 5;          // getting there
+  return 1;                                 // fast and right - basically known
+}
+
+let lastFactKey = null;
+function pickFact(tables) {
+  const facts = loadFacts();
+  const pool = [];
+  tables.forEach(t => {
+    for (let m = 1; m <= MAX_MULTIPLIER; m++) {
+      const k = factKey(t, m);
+      pool.push({ table: t, multiplier: m, key: k, weight: factWeight(facts[k]) });
+    }
+  });
+  // Never ask the same fact twice running - a weighted pick would otherwise
+  // hammer one hard fact over and over, which feels like punishment.
+  const usable = pool.filter(p => p.key !== lastFactKey);
+  const list = usable.length ? usable : pool;
+
+  const total = list.reduce((s, p) => s + p.weight, 0);
+  let r = Math.random() * total;
+  for (const p of list) {
+    r -= p.weight;
+    if (r <= 0) { lastFactKey = p.key; return p; }
+  }
+  const last = list[list.length - 1];
+  lastFactKey = last.key;
+  return last;
+}
+
 // ---- Question generation ----
 function generateQuestion(tables) {
-  const table = tables[Math.floor(Math.random() * tables.length)];
-  const multiplier = 1 + Math.floor(Math.random() * MAX_MULTIPLIER);
+  const { table, multiplier } = pickFact(tables);
   const product = table * multiplier;
 
   const distractors = new Set();
@@ -247,6 +331,90 @@ function shuffle(arr) {
   return a;
 }
 
+// ---- Answer input (shared by both games) ----
+// Typed entry, not multiple choice, is the default. The skill being built is
+// RECALL: with three buttons she can succeed by elimination, and there is a
+// 33% floor from guessing alone. The three choices are still there behind a
+// "Stuck?" button, so a new stage never becomes a wall -- but taking that
+// help is recorded, so the fact keeps coming back.
+const pads = {};
+
+function buildPad(prefix, onAnswer) {
+  const pad = { value: '', askedAt: 0, helped: false, onAnswer, locked: false };
+  pads[prefix] = pad;
+
+  const wrap = document.getElementById(prefix + '-keypad');
+  wrap.innerHTML = '';
+  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', '✓'].forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'key' + (k === '✓' ? ' key-go' : (k === '⌫' ? ' key-del' : ''));
+    b.textContent = k;
+    b.addEventListener('click', () => pressKey(prefix, k));
+    wrap.appendChild(b);
+  });
+
+  document.getElementById(prefix + '-stuck').addEventListener('click', () => {
+    showChoices(prefix);
+  });
+}
+
+function pressKey(prefix, k) {
+  const pad = pads[prefix];
+  if (pad.locked) return;
+  if (k === '⌫') pad.value = pad.value.slice(0, -1);
+  else if (k === '✓') { submitTyped(prefix); return; }
+  else if (pad.value.length < 3) pad.value += k;       // 12x12=144, 3 digits is plenty
+  drawTyped(prefix);
+}
+
+function drawTyped(prefix) {
+  const el = document.getElementById(prefix + '-typed');
+  const pad = pads[prefix];
+  el.textContent = pad.value || '?';
+  el.classList.toggle('empty', !pad.value);
+}
+
+function submitTyped(prefix) {
+  const pad = pads[prefix];
+  if (!pad.value || pad.locked) return;
+  pad.onAnswer(parseInt(pad.value, 10), null);
+}
+
+// Called by each game when a wrong answer needs clearing so she can retry.
+function clearTyped(prefix) {
+  pads[prefix].value = '';
+  drawTyped(prefix);
+}
+
+function showChoices(prefix) {
+  const pad = pads[prefix];
+  pad.helped = true;
+  document.getElementById(prefix + '-choices').classList.remove('hidden');
+  document.getElementById(prefix + '-stuck').classList.add('hidden');
+}
+
+// Fresh question: clear the input, hide the choices again, start the clock.
+function resetPad(prefix, question, onChoice) {
+  const pad = pads[prefix];
+  pad.value = '';
+  pad.helped = false;
+  pad.locked = false;
+  pad.askedAt = Date.now();
+  drawTyped(prefix);
+
+  document.getElementById(prefix + '-stuck').classList.remove('hidden');
+  const choices = document.getElementById(prefix + '-choices');
+  choices.classList.add('hidden');
+  choices.innerHTML = '';
+  question.options.forEach(n => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = n;
+    btn.addEventListener('click', () => onChoice(n, btn));
+    choices.appendChild(btn);
+  });
+}
+
 // ---- Stage selector (shared row builder for both games) ----
 let feedStage = 1;
 let jigsawStage = 1;
@@ -265,13 +433,20 @@ function renderStageRow(containerId, activeStage, onSelect) {
 }
 
 // ---- Feed Pip ----
+// Clearing a stage used to need 8 correct IN A ROW. That was a fair bar when
+// the answer was one of three buttons; asking for a flawless run of eight
+// from memory is a different thing entirely, and a stage she can never clear
+// is a stage she stops visiting. So the session is still 8 correct answers,
+// but up to this many slips still count as a clear.
+const MISTAKES_ALLOWED = 2;
+
 let feedRound = 0;
-let feedCorrectStreak = 0;
+let feedMistakes = 0;
 let feedQuestion = null;
 
 function startFeedGame() {
   feedRound = 0;
-  feedCorrectStreak = 0;
+  feedMistakes = 0;
   renderStageRow('feed-stages', feedStage, (id) => { feedStage = id; startFeedGame(); });
   renderFeedDots();
   showScreen('screen-feed');
@@ -297,15 +472,7 @@ function nextFeedRound() {
   feedQuestion = generateQuestion(stage.tables);
 
   document.getElementById('feed-question').textContent = `${feedQuestion.table} × ${feedQuestion.multiplier} = ?`;
-  const choicesWrap = document.getElementById('feed-choices');
-  choicesWrap.innerHTML = '';
-  feedQuestion.options.forEach(n => {
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.textContent = n;
-    btn.addEventListener('click', () => handleFeedAnswer(n, btn));
-    choicesWrap.appendChild(btn);
-  });
+  resetPad('feed', feedQuestion, handleFeedAnswer);
   const pip = document.getElementById('feed-pip');
   if (!pip.hasChildNodes()) pip.innerHTML = guineaPigSvg(FARM_PIGS[0]);
   pip.classList.remove('happy', 'sad');
@@ -313,26 +480,32 @@ function nextFeedRound() {
 }
 
 function handleFeedAnswer(n, btn) {
+  const pad = pads['feed'];
   const pip = document.getElementById('feed-pip');
-  if (n === feedQuestion.product) {
-    btn.classList.add('correct-flash');
+  const correct = n === feedQuestion.product;
+  recordAttempt(feedQuestion.table, feedQuestion.multiplier, correct,
+                Date.now() - pad.askedAt, pad.helped);
+
+  if (correct) {
+    pad.locked = true;                       // no double-submits during the bounce
+    if (btn) btn.classList.add('correct-flash');
     pip.classList.remove('idle');
     pip.classList.add('happy');
     playSuccessChime();
     document.querySelectorAll('#feed-dots .dot')[feedRound].classList.add('done');
     feedRound++;
-    feedCorrectStreak++;
     setTimeout(() => {
       pip.classList.remove('happy');
       nextFeedRound();
     }, 700);
   } else {
-    btn.classList.add('wrong-flash');
-    feedCorrectStreak = 0;
+    if (btn) btn.classList.add('wrong-flash');
+    clearTyped('feed');                      // wipe it so she can try again
+    feedMistakes++;
     pip.classList.remove('idle');
     pip.classList.add('sad');
     playGentleBlip();
-    setTimeout(() => btn.classList.remove('wrong-flash'), 400);
+    if (btn) setTimeout(() => btn.classList.remove('wrong-flash'), 400);
     setTimeout(() => {
       pip.classList.remove('sad');
       pip.classList.add('idle');
@@ -346,7 +519,10 @@ function handleFeedAnswer(n, btn) {
 // To swap or add pictures: drop the file in images/ and update the entry
 // for that stage number below.
 const JIGSAW_IMAGES = {
-  1: { file: 'images/images.jpg', name: 'a guinea pig in the straw' },
+  // Stage 1 is a real photo of Clara and Evie (6.9.26), deliberately first
+  // rather than saved for stage 7 -- it is the hook, and it should be the
+  // thing she uncovers on day one. One line to move it later if that's wrong.
+  1: { file: 'images/clara-and-evie.jpg', name: 'you and Evie!', portrait: true },
   2: { file: 'images/images-2.jpg', name: 'a white guinea pig' },
   3: { file: 'images/images-1.jpg', name: 'a guinea pig in the grass' },
   4: { file: 'images/images-4.jpg', name: 'a fluffy long-haired guinea pig' },
@@ -364,6 +540,8 @@ function startJigsawGame() {
   currentJigsawImage = JIGSAW_IMAGES[jigsawStage];
 
   document.getElementById('jigsaw-pic').innerHTML = `<img src="${currentJigsawImage.file}" alt="${currentJigsawImage.name}">`;
+  document.getElementById('jigsaw-stage-box')
+    .classList.toggle('portrait', !!currentJigsawImage.portrait);
   renderStageRow('jigsaw-stages', jigsawStage, (id) => { jigsawStage = id; startJigsawGame(); });
   renderJigsawGrid();
   showScreen('screen-jigsaw');
@@ -391,20 +569,18 @@ function nextJigsawRound() {
   jigsawQuestion = generateQuestion(stage.tables);
 
   document.getElementById('jigsaw-question').textContent = `${jigsawQuestion.table} × ${jigsawQuestion.multiplier} = ?`;
-  const choicesWrap = document.getElementById('jigsaw-choices');
-  choicesWrap.innerHTML = '';
-  jigsawQuestion.options.forEach(n => {
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.textContent = n;
-    btn.addEventListener('click', () => handleJigsawAnswer(n, btn));
-    choicesWrap.appendChild(btn);
-  });
+  resetPad('jigsaw', jigsawQuestion, handleJigsawAnswer);
 }
 
 function handleJigsawAnswer(n, btn) {
-  if (n === jigsawQuestion.product) {
-    btn.classList.add('correct-flash');
+  const pad = pads['jigsaw'];
+  const correct = n === jigsawQuestion.product;
+  recordAttempt(jigsawQuestion.table, jigsawQuestion.multiplier, correct,
+                Date.now() - pad.askedAt, pad.helped);
+
+  if (correct) {
+    pad.locked = true;
+    if (btn) btn.classList.add('correct-flash');
     playSuccessChime();
     const tile = jigsawTilesLeft.splice(Math.floor(Math.random() * jigsawTilesLeft.length), 1)[0];
     tile.classList.add('revealed');
@@ -416,9 +592,10 @@ function handleJigsawAnswer(n, btn) {
       setTimeout(nextJigsawRound, 700);
     }
   } else {
-    btn.classList.add('wrong-flash');
+    if (btn) btn.classList.add('wrong-flash');
+    clearTyped('jigsaw');
     playGentleBlip();
-    setTimeout(() => btn.classList.remove('wrong-flash'), 400);
+    if (btn) setTimeout(() => btn.classList.remove('wrong-flash'), 400);
   }
 }
 
@@ -436,7 +613,7 @@ function finishSession(game) {
   // needs a streak threshold. The jigsaw's own picture being fully
   // revealed already IS the achievement - no separate threshold needed.
   const stageCleared = game === 'feed'
-    ? feedCorrectStreak >= ROUNDS_TO_CLEAR_STAGE
+    ? feedMistakes <= MISTAKES_ALLOWED
     : true;
 
   if (game === 'feed') {
@@ -467,5 +644,54 @@ function finishSession(game) {
   showScreen('screen-complete');
 }
 
+// ---- For grown-ups: which facts still need work ----
+// Deliberately plain and a bit boring. It exists so Andrew and Laura can see
+// where she actually is, without any of it leaking into Clara's view of the
+// game as a scoreboard.
+function renderGrownups() {
+  const panel = document.getElementById('grownups-panel');
+  const facts = loadFacts();
+  const keys = Object.keys(facts);
+
+  if (!keys.length) {
+    panel.innerHTML = '<p class="grownups-empty">Nothing practised yet.</p>';
+    return;
+  }
+
+  const rows = keys.map(k => ({ k, ...facts[k] }));
+  const attempts = rows.reduce((s, r) => s + r.attempts, 0);
+  const known = rows.filter(r => !r.lastWrong && r.avgMs && r.avgMs <= 3500).length;
+
+  // Worst first: missed last time, then slowest.
+  const shaky = rows
+    .filter(r => r.lastWrong || (r.avgMs && r.avgMs > 3500))
+    .sort((a, b) => (b.lastWrong - a.lastWrong) || ((b.avgMs || 0) - (a.avgMs || 0)))
+    .slice(0, 12);
+
+  panel.innerHTML =
+    `<p class="grownups-summary">${attempts} questions answered · ` +
+    `${known} fact${known === 1 ? '' : 's'} fast and correct · ` +
+    `${rows.length} seen</p>` +
+    (shaky.length
+      ? '<div class="grownups-facts">' + shaky.map(r => {
+          const secs = r.avgMs ? (r.avgMs / 1000).toFixed(1) + 's' : '—';
+          const cls = r.lastWrong ? 'shaky wrong' : 'shaky slow';
+          const why = r.lastWrong ? 'missed last time' : secs;
+          return `<span class="${cls}">${r.k.replace('x', ' × ')}<em>${why}</em></span>`;
+        }).join('') + '</div>'
+      : '<p class="grownups-empty">Nothing shaky right now.</p>');
+}
+
+document.getElementById('grownups-btn').addEventListener('click', () => {
+  const panel = document.getElementById('grownups-panel');
+  const hidden = panel.classList.contains('hidden');
+  if (hidden) renderGrownups();
+  panel.classList.toggle('hidden');
+  document.getElementById('grownups-btn').textContent =
+    hidden ? 'Hide' : 'For grown-ups';
+});
+
 // ---- Init ----
+buildPad('feed', (n, btn) => handleFeedAnswer(n, btn));
+buildPad('jigsaw', (n, btn) => handleJigsawAnswer(n, btn));
 renderFarm();

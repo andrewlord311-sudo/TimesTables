@@ -197,6 +197,7 @@ document.querySelectorAll('.game-tile').forEach(btn => {
     const game = btn.dataset.game;
     if (game === 'feed') startFeedGame();
     if (game === 'jigsaw') startJigsawGame();
+    if (game === 'run') startRunGame();
   });
 });
 document.querySelectorAll('[data-back]').forEach(btn => {
@@ -207,6 +208,7 @@ document.getElementById('home-btn').addEventListener('click', () => { renderFarm
 let lastCompletedGame = null;
 document.getElementById('play-again-btn').addEventListener('click', () => {
   if (lastCompletedGame === 'feed') startFeedGame();
+  else if (lastCompletedGame === 'run') startRunGame();
   else startJigsawGame();
 });
 
@@ -297,6 +299,12 @@ function pickFact(tables) {
 // ---- Question generation ----
 function generateQuestion(tables) {
   const { table, multiplier } = pickFact(tables);
+  return withOptions(table, multiplier);
+}
+
+// Split out from generateQuestion so the Run can build its own fixed set of
+// ten questions up front and still get the same plausible distractors.
+function withOptions(table, multiplier) {
   const product = table * multiplier;
 
   const distractors = new Set();
@@ -599,6 +607,158 @@ function handleJigsawAnswer(n, btn) {
   }
 }
 
+// ---- Guinea Pig Run ----
+// Clara's actual Year 3 target and nothing else: the 2, 5 and 10 tables,
+// multipliers 1 to 12 (so 10 x 12 = 120 is the largest thing she ever sees).
+// Ten questions, no repeats, deliberately spread across all three tables.
+//
+// The run is TIMED and the clock is never shown. A visible timer turns
+// practice into a test and mostly just makes children hurry and panic; the
+// number is only of interest to Andrew, so it goes in the grown-ups panel.
+const RUN_TABLES = [2, 5, 10];
+const RUN_QUESTIONS = 10;
+const RUN_KEY = 'ttg_run';
+const OBSTACLES = ['🌵', '🪵', '💧', '🪨', '🌳', '🍂', '🌾', '🪴', '⛰️', '🌻'];
+
+function loadRun() {
+  try { return JSON.parse(localStorage.getItem(RUN_KEY)) || { runs: [] }; }
+  catch { return { runs: [] }; }
+}
+function saveRun(r) { localStorage.setItem(RUN_KEY, JSON.stringify(r)); }
+
+// Ten distinct questions, split 4/3/3 across the three tables so no table can
+// be crowded out by chance -- which table gets the extra one is shuffled, so
+// it is not always the 2s. Products are kept distinct too where possible, so
+// a single run does not ask both 5 x 2 and 2 x 5 and feel like a repeat.
+function buildRunQuestions() {
+  const tables = shuffle(RUN_TABLES);
+  const counts = [4, 3, 3];
+  const usedProducts = new Set();
+  const picked = [];
+
+  tables.forEach((table, i) => {
+    const wanted = counts[i];
+    const multipliers = shuffle(Array.from({ length: 12 }, (_, k) => k + 1));
+    const spares = [];
+    let taken = 0;
+
+    for (const m of multipliers) {
+      if (taken >= wanted) { spares.push(m); continue; }
+      if (usedProducts.has(table * m)) { spares.push(m); continue; }
+      usedProducts.add(table * m);
+      picked.push({ table, multiplier: m });
+      taken++;
+    }
+    // Only reachable if distinct products ran out for this table, which the
+    // 1-12 range makes very unlikely -- but ten questions must mean ten.
+    for (const m of spares) {
+      if (taken >= wanted) break;
+      picked.push({ table, multiplier: m });
+      taken++;
+    }
+  });
+
+  return shuffle(picked).map(q => withOptions(q.table, q.multiplier));
+}
+
+let runQs = [];
+let runIndex = 0;
+let runMistakes = 0;
+let runStartedAt = 0;
+let runQuestion = null;
+
+function startRunGame() {
+  runQs = buildRunQuestions();
+  runIndex = 0;
+  runMistakes = 0;
+  runStartedAt = Date.now();
+
+  const obstacles = document.getElementById('run-obstacles');
+  obstacles.innerHTML = '';
+  for (let i = 0; i < RUN_QUESTIONS; i++) {
+    const o = document.createElement('span');
+    o.className = 'obstacle';
+    o.textContent = OBSTACLES[i % OBSTACLES.length];
+    // Spread between 8% and 88%, leaving room for the pig and the flag.
+    o.style.left = (8 + (i * 80) / (RUN_QUESTIONS - 1)) + '%';
+    obstacles.appendChild(o);
+  }
+
+  const dots = document.getElementById('run-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < RUN_QUESTIONS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    dots.appendChild(d);
+  }
+
+  const pig = document.getElementById('run-pig');
+  pig.innerHTML = guineaPigSvg(FARM_PIGS[1]);   // Evie leads the run
+  pig.style.left = '0%';
+  pig.classList.remove('hop', 'stumble');
+
+  showScreen('screen-run');
+  nextRunRound();
+}
+
+function nextRunRound() {
+  if (runIndex >= RUN_QUESTIONS) { finishRun(); return; }
+  runQuestion = runQs[runIndex];
+  document.getElementById('run-question').textContent =
+    `${runQuestion.table} × ${runQuestion.multiplier} = ?`;
+  resetPad('run', runQuestion, handleRunAnswer);
+}
+
+function handleRunAnswer(n, btn) {
+  const pad = pads['run'];
+  const pig = document.getElementById('run-pig');
+  const correct = n === runQuestion.product;
+  recordAttempt(runQuestion.table, runQuestion.multiplier, correct,
+                Date.now() - pad.askedAt, pad.helped);
+
+  if (correct) {
+    pad.locked = true;
+    if (btn) btn.classList.add('correct-flash');
+    playSuccessChime();
+    document.querySelectorAll('#run-obstacles .obstacle')[runIndex].classList.add('cleared');
+    document.querySelectorAll('#run-dots .dot')[runIndex].classList.add('done');
+    runIndex++;
+    pig.classList.add('hop');
+    pig.style.left = ((runIndex / RUN_QUESTIONS) * 88) + '%';
+    setTimeout(() => { pig.classList.remove('hop'); nextRunRound(); }, 750);
+  } else {
+    if (btn) btn.classList.add('wrong-flash');
+    clearTyped('run');
+    runMistakes++;
+    playGentleBlip();
+    pig.classList.add('stumble');
+    if (btn) setTimeout(() => btn.classList.remove('wrong-flash'), 400);
+    setTimeout(() => pig.classList.remove('stumble'), 500);
+  }
+}
+
+function finishRun() {
+  const ms = Date.now() - runStartedAt;
+  const store = loadRun();
+  store.runs = (store.runs || [])
+    .concat([{ ms, mistakes: runMistakes, at: Date.now() }])
+    .slice(-20);                                  // enough to see a trend
+  store.lastMs = ms;
+  const isBest = !store.bestMs || ms < store.bestMs;
+  if (isBest) store.bestMs = ms;
+  saveRun(store);
+
+  lastCompletedGame = 'run';
+  playCompleteFanfare();
+  document.getElementById('new-pig-reveal').classList.add('hidden');
+  document.getElementById('complete-title').textContent = 'You finished the run!';
+  // Deliberately says nothing about the time, not even "a new best" -- that
+  // would tell her she is being timed, which is exactly what we are avoiding.
+  document.getElementById('complete-message').textContent =
+    'Evie jumped every obstacle and made it all the way to the flag!';
+  showScreen('screen-complete');
+}
+
 // ---- Completion ----
 function finishSession(game) {
   lastCompletedGame = game;
@@ -653,8 +813,30 @@ function renderGrownups() {
   const facts = loadFacts();
   const keys = Object.keys(facts);
 
+  // Run times live here and ONLY here -- Clara never sees a clock. Built
+  // before the early return below, so a run still shows even if the fact
+  // history has been cleared.
+  const run = loadRun();
+  // A real run is 30-90 seconds, so past a minute "1:24" reads better than
+  // "84.3s"; under a minute the tenth of a second is the interesting part.
+  const secs = ms => {
+    const s = ms / 1000;
+    if (s < 60) return s.toFixed(1) + 's';
+    return Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+  };
+  let runLine = '';
+  if (run.runs && run.runs.length) {
+    const last3 = run.runs.slice(-3).map(r => secs(r.ms)).join(', ');
+    runLine =
+      `<p class="grownups-summary">Guinea Pig Run · best <strong>${secs(run.bestMs)}</strong>` +
+      ` · last ${secs(run.lastMs)} · ${run.runs.length} run${run.runs.length === 1 ? '' : 's'}` +
+      `<br><span class="grownups-faint">recent: ${last3}` +
+      ` · slips last time: ${run.runs[run.runs.length - 1].mistakes}</span></p>`;
+  }
+
   if (!keys.length) {
-    panel.innerHTML = '<p class="grownups-empty">Nothing practised yet.</p>';
+    panel.innerHTML = runLine ||
+      '<p class="grownups-empty">Nothing practised yet.</p>';
     return;
   }
 
@@ -668,7 +850,7 @@ function renderGrownups() {
     .sort((a, b) => (b.lastWrong - a.lastWrong) || ((b.avgMs || 0) - (a.avgMs || 0)))
     .slice(0, 12);
 
-  panel.innerHTML =
+  panel.innerHTML = runLine +
     `<p class="grownups-summary">${attempts} questions answered · ` +
     `${known} fact${known === 1 ? '' : 's'} fast and correct · ` +
     `${rows.length} seen</p>` +
@@ -694,4 +876,5 @@ document.getElementById('grownups-btn').addEventListener('click', () => {
 // ---- Init ----
 buildPad('feed', (n, btn) => handleFeedAnswer(n, btn));
 buildPad('jigsaw', (n, btn) => handleJigsawAnswer(n, btn));
+buildPad('run', (n, btn) => handleRunAnswer(n, btn));
 renderFarm();

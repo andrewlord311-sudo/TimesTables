@@ -31,6 +31,23 @@ invented ones — and stage 1's jigsaw is a real photo of her holding Evie.
 "For grown-ups" on the home screen lists the facts still shaky, so someone
 can see where she actually is without any of it becoming a scoreboard for her.
 
+## Guinea Pig Run
+
+The third game, and the only one pinned to Clara's actual Year 3 target:
+**just the 2, 5 and 10 times tables, multipliers 1 to 12**, so 10 × 12 = 120 is
+the largest thing she ever sees. Ten questions, never a repeat, split 4/3/3
+across the three tables — which table gets the extra one is shuffled, so it is
+not always the 2s. Products are kept distinct too, so one run never asks both
+5 × 2 and 2 × 5.
+
+Every correct answer hops Evie over the next obstacle towards the flag; a wrong
+one makes her stumble, and the question comes round again.
+
+**It is timed, and the clock is never on screen.** A visible timer turns
+practice into a test and mostly makes children hurry and panic. The completion
+screen says nothing about time at all — not even "a new best", which would
+give the game away. Best and recent times appear only under "For grown-ups".
+
 ## The files
 
 Everything is in `app/` — `index.html`, `app.js`, `style.css`, and the guinea

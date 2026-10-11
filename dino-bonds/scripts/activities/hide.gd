@@ -35,7 +35,7 @@ func run() -> void:
 		await _walk_all(hiders, func(i): return _behind(i), 3.0)
 		for i in hiders:
 			herd[i].visible = false
-		var n := await ask_number("%d can see. How many hide?" % see, hide_n)
+		var n := await ask_number("I can see %d. How many hide?" % see, hide_n)
 		if stopped or n < 0:
 			break
 		record(see, n == hide_n)

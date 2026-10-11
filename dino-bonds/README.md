@@ -11,7 +11,7 @@ On the valley screen, click the ground to walk the T. rex; space makes it roar.
 | Place | What it teaches |
 |---|---|
 | 🥚 Nest | a nest laid out as a five/ten frame: tap hollows to fill it, then "how many more?" |
-| 🌿 Hide | some of a herd hide behind giant ferns: "6 can see. How many hide?" (the missing part) |
+| 🌿 Hide | some of a herd hide behind giant ferns: "I can see 6. How many hide?" (the missing part) |
 | 🌊 River | stepping stones 0–10 as a number line: "Rex is on 4. How many hops to 10?" |
 | 🦴 Dig | match bone pieces that make 10 — every way, 1+9 … 5+5 — and the fossil comes alive |
 | 🍓 Feed | red and blue berries in Rex's bowl to make exactly 10, a new way each time |

@@ -12,6 +12,7 @@ const SPOTS := {
 	"river": {"at": Vector3(14, 0, -1),   "cam": Vector3(20.8, 4.3, -1.0), "look": Vector3(14, 0.4, -1.0)},
 	"dig":   {"at": Vector3(0, 0, -16),   "cam": Vector3(0, 5.4, -9.0),    "look": Vector3(0, 0.3, -15.0)},
 	"feed":  {"at": Vector3(4, 0, 12),    "cam": Vector3(4, 4.4, 19.6),    "look": Vector3(4, 1.3, 11.6)},
+	"sky":   {"at": Vector3(2, 0, 7),     "cam": Vector3(2, 2.0, 15.5),    "look": Vector3(2, 6.0, -2.0)},
 	"park":  {"at": Vector3(-12, 0, 15),  "cam": Vector3(-12, 6.0, 23.5),  "look": Vector3(-12, 0.6, 14.6)},
 	"menu":  {"at": Vector3(0, 0, 3),     "cam": Vector3(0, 23.0, 31.0),   "look": Vector3(0, 0, -2.0)},
 }

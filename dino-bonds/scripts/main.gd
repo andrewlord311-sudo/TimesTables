@@ -201,6 +201,11 @@ func _on_activity(name: String) -> void:
 	ui.show_menu(false)
 	sfx.play("pop")
 	var script: GDScript = load("res://scripts/activities/%s.gd" % name)
+	if script == null or not script.can_instantiate():
+		push_error("couldn't load activity %s" % name)
+		ui.show_menu(true, progress.target)
+		_busy = false
+		return
 	activity = script.new()
 	activity.set("game", self)
 	add_child(activity)
@@ -300,7 +305,7 @@ func bot_answer(top: int) -> int:
 
 func _run_bot() -> void:
 	await get_tree().create_timer(0.5).timeout
-	var acts := ["nest", "hide", "river", "dig", "feed", "park"]
+	var acts := ["nest", "hide", "river", "dig", "feed", "sky", "park"]
 	if bot_only != "":
 		acts = Array(bot_only.split(","))
 	for t in bot_targets:

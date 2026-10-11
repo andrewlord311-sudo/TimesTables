@@ -11,7 +11,9 @@ const PALETTES := {
 	"Stegosaurus": {"DarkBrown": Color(0.62, 0.40, 0.70), "LightBrown": Color(0.95, 0.82, 0.92), "Brown": Color(0.95, 0.55, 0.35)},
 }
 
-const EYE_BACK := {"Trex": 0.13, "Triceratops": 0.09, "Parasaurolophus": 0.06, "Stegosaurus": 0.05}
+const EYE_BACK := {"Trex": 0.13, "Triceratops": 0.12, "Parasaurolophus": 0.06, "Stegosaurus": 0.05}
+const EYE_DOWN := {"Triceratops": 0.07}  # below the brow horns, not at their tips
+const EYE_SIZE := {}
 
 var species := "Trex"
 var height := 2.4
@@ -27,17 +29,19 @@ func setup(p_species: String, p_height: float) -> void:
 	var mi: MeshInstance3D = model.find_children("*", "MeshInstance3D", true, false)[0]
 	var armature: Node3D = model.get_node("Armature")
 	var arm_scale := armature.transform.basis.get_scale().x
-	# Scale the whole model so it stands `height` tall (mesh Z is up before the armature turns it).
-	var aabb := mi.get_aabb()
-	# Skinned vertices go through the bind pose first, which carries its own
-	# scale in this pack, so the mesh's raw size has to be multiplied by it.
-	var bind_scale := 1.0
-	if mi.skin and mi.skin.get_bind_count() > 0:
-		bind_scale = mi.skin.get_bind_pose(0).basis.get_scale().x
-	var raw_h: float = max(aabb.size.z, 0.0001) * arm_scale * bind_scale
-	model.scale = Vector3.ONE * (height / raw_h)
+	# Measure the dinosaur as it really stands: every vertex taken through its
+	# bind pose and its bone's rest pose into skeleton space. (The raw meshes in
+	# this pack aren't oriented alike -- the Triceratops lies on its side until
+	# skinned -- and the bind poses carry scales, so the mesh itself can't be trusted.)
+	var pts := _skeleton_space_points(sk, mi)
+	var lo := pts[0]
+	var hi := pts[0]
+	for p in pts:
+		lo = lo.min(p)
+		hi = hi.max(p)
+	model.scale = Vector3.ONE * (height / (max(hi.z - lo.z, 0.0001) * arm_scale))
 	_restyle(mi, arm_scale * model.scale.x)
-	_add_eyes(sk, mi)
+	_add_eyes(sk, pts, lo, hi)
 	anim = model.find_children("*", "AnimationPlayer", true, false)[0]
 	for a in anim.get_animation_list():
 		if a.ends_with("_Idle"):
@@ -114,21 +118,40 @@ func _smoothed(src: ArrayMesh) -> ArrayMesh:
 		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr, [], {}, flags)
 	return out
 
+## Vertex positions in skeleton space at the rest pose (each vertex follows the
+## bone it's weighted to most). Skeleton space is the same for every species:
+## +Z up, and the head is along -Y.
+func _skeleton_space_points(sk: Skeleton3D, mi: MeshInstance3D) -> PackedVector3Array:
+	var skin := mi.skin
+	var to_skel := []
+	for i in skin.get_bind_count():
+		var b := skin.get_bind_bone(i)
+		if b < 0:
+			b = sk.find_bone(skin.get_bind_name(i))
+		to_skel.append(sk.get_bone_global_rest(b) * skin.get_bind_pose(i))
+	var out := PackedVector3Array()
+	for s in mi.mesh.get_surface_count():
+		var arr := mi.mesh.surface_get_arrays(s)
+		var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+		var weights: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
+		var per: int = bones.size() / maxi(v.size(), 1)
+		for i in v.size():
+			var best := 0
+			for k in per:
+				if weights[i * per + k] > weights[i * per + best]:
+					best = k
+			out.append((to_skel[bones[i * per + best]] as Transform3D) * v[i])
+	return out
+
 ## Big cartoon eyes. The pack's models have no eyes of their own, so find the
-## head from the mesh itself: the snout is the vertex furthest along -Y (forward
-## in mesh space), and the eyes sit a little behind it, high on each side of the
-## head. They're parented to the head bone (through the skin's bind pose, which
-## maps mesh space to bone space) so they move with it.
-func _add_eyes(sk: Skeleton3D, mi: MeshInstance3D) -> void:
-	var src: ArrayMesh = mi.mesh
-	var pts := PackedVector3Array()
-	for s in src.get_surface_count():
-		pts.append_array(src.surface_get_arrays(s)[Mesh.ARRAY_VERTEX])
-	var lo := pts[0]
-	var hi := pts[0]
-	for p in pts:
-		lo = lo.min(p)
-		hi = hi.max(p)
+## head from the shape: the snout is the furthest point forward (-Y), and the
+## eyes sit a little behind it, high on each side. They hang off the head bone
+## so they move with it.
+func _add_eyes(sk: Skeleton3D, pts: PackedVector3Array, lo: Vector3, hi: Vector3) -> void:
+	var hb := sk.find_bone("Head")
+	if hb < 0:
+		return
 	var length := hi.y - lo.y
 	var eye_y: float = lo.y + length * float(EYE_BACK.get(species, 0.13))
 	var band := length * 0.025
@@ -136,32 +159,25 @@ func _add_eyes(sk: Skeleton3D, mi: MeshInstance3D) -> void:
 	for p in pts:
 		if abs(p.y - eye_y) < band:
 			top = max(top, p.z)
-	var eye_z := top - length * 0.03
+	var eye_z := top - length * float(EYE_DOWN.get(species, 0.03))
 	var half_w := 0.0
 	for p in pts:
 		if abs(p.y - eye_y) < band and abs(p.z - eye_z) < length * 0.03:
 			half_w = max(half_w, abs(p.x))
 	if half_w == 0.0:
 		return
-	var skin := mi.skin
-	var hb := sk.find_bone("Head")
-	var bind := Transform3D.IDENTITY
-	if skin:
-		for i in skin.get_bind_count():
-			if skin.get_bind_name(i) == "Head" or skin.get_bind_bone(i) == hb:
-				bind = skin.get_bind_pose(i)
 	var att := BoneAttachment3D.new()
 	att.bone_name = "Head"
 	sk.add_child(att)
-	var r := length * 0.024
-	var bs := bind.basis.get_scale().x  # mesh units -> bone units
+	var to_head := sk.get_bone_global_rest(hb).affine_inverse()
+	var r := length * float(EYE_SIZE.get(species, 0.024))
 	for sx in [-1.0, 1.0]:
 		var c := Vector3(sx * (half_w - r * 0.35), eye_y, eye_z)
 		var out := Vector3(sx, 0, 0)
 		var fwd := Vector3(0, -1, 0)
-		_sphere(att, bind * c, r * bs, Color(1, 1, 1), true)
-		_sphere(att, bind * (c + (out * 0.62 + fwd * 0.45 + Vector3(0, 0, 0.12)).normalized() * r * 0.6), r * 0.58 * bs, Color(0.08, 0.06, 0.06), false)
-		_sphere(att, bind * (c + (out * 0.75 + fwd * 0.4 + Vector3(0, 0, 0.5)).normalized() * r * 1.0), r * 0.18 * bs, Color(1, 1, 1), false, true)
+		_sphere(att, to_head * c, r, Color(1, 1, 1), true)
+		_sphere(att, to_head * (c + (out * 0.62 + fwd * 0.45 + Vector3(0, 0, 0.12)).normalized() * r * 0.6), r * 0.58, Color(0.08, 0.06, 0.06), false)
+		_sphere(att, to_head * (c + (out * 0.75 + fwd * 0.4 + Vector3(0, 0, 0.5)).normalized() * r * 1.0), r * 0.18, Color(1, 1, 1), false, true)
 
 func _sphere(parent: Node3D, pos: Vector3, r: float, col: Color, outlined: bool, unshaded := false) -> void:
 	var mi := MeshInstance3D.new()

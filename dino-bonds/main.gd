@@ -31,7 +31,7 @@ func _ready() -> void:
 	rex.setup("Trex", 3.0)
 	rex.position = Vector3(2.5, 0, 3.0)
 	rex.rotation.y = PI
-	for d in [["Parasaurolophus", 3.2, Vector3(6.5, 0, -6.0), -0.8], ["Stegosaurus", 2.2, Vector3(-9.0, 0, 1.5), 2.2]]:
+	for d in [["Triceratops", 1.9, Vector3(-6.0, 0, -4.0), 0.9], ["Parasaurolophus", 3.2, Vector3(6.5, 0, -6.0), -0.8], ["Stegosaurus", 2.2, Vector3(-9.0, 0, 1.5), 2.2]]:
 		var other: Node3D = Dino.new()
 		add_child(other)
 		other.setup(d[0], d[1])

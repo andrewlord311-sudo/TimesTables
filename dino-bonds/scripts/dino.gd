@@ -9,20 +9,33 @@ const PALETTES := {
 	"Parasaurolophus": {"Green": Color(0.95, 0.62, 0.30), "LightGreen": Color(0.99, 0.86, 0.62),
 		"LightYellow": Color(0.98, 0.80, 0.45), "Red": Color(0.86, 0.36, 0.30)},
 	"Stegosaurus": {"DarkBrown": Color(0.62, 0.40, 0.70), "LightBrown": Color(0.95, 0.82, 0.92), "Brown": Color(0.95, 0.55, 0.35)},
+	"Apatosaurus": {"Brown": Color(0.45, 0.72, 0.62), "Material": Color(0.93, 0.95, 0.78)},
+	"Velociraptor": {"Brown": Color(0.93, 0.45, 0.38), "Black": Color(0.13, 0.11, 0.10), "LightBrown": Color(0.99, 0.85, 0.66)},
 }
 
-const EYE_BACK := {"Trex": 0.13, "Triceratops": 0.12, "Parasaurolophus": 0.06, "Stegosaurus": 0.05}
+## Park babies come in a few colourways: the same species, hue-shifted.
+const VARIANT_SHIFT := [0.0, 0.33, 0.62, 0.15, 0.8]
+const BONE := Color(0.93, 0.89, 0.78)
+
+const EYE_BACK := {"Trex": 0.13, "Triceratops": 0.12, "Parasaurolophus": 0.06, "Stegosaurus": 0.05, "Apatosaurus": 0.03, "Velociraptor": 0.08}
 const EYE_DOWN := {"Triceratops": 0.07}  # below the brow horns, not at their tips
 const EYE_SIZE := {}
 
+signal roared
+
 var species := "Trex"
 var height := 2.4
+var variant := 0
 var anim: AnimationPlayer
+var sfx: Node            # set by whoever owns the sound player
 var _prefix := ""
+var _mats: Array[StandardMaterial3D] = []
+var _cols: Array[Color] = []
 
-func setup(p_species: String, p_height: float) -> void:
+func setup(p_species: String, p_height: float, p_variant := 0) -> void:
 	species = p_species
 	height = p_height
+	variant = p_variant
 	var model: Node3D = load("res://assets/dinos/%s.fbx" % species).instantiate()
 	add_child(model)
 	var sk: Skeleton3D = model.find_children("*", "Skeleton3D", true, false)[0]
@@ -63,6 +76,23 @@ func play(name: String, speed := 1.0) -> void:
 func is_playing(name: String) -> bool:
 	return anim.current_animation == _prefix + name and anim.is_playing()
 
+## The big moment: the attack animation as a roar, with sound.
+func roar(pitch := 1.0) -> void:
+	play("Attack")
+	if sfx:
+		var big := clampf(height / 3.0, 0.5, 1.4)
+		sfx.play("roar", pitch / sqrt(big))
+	roared.emit()
+
+## Turn to stone-coloured bone (fossil), or bring the colours back to life.
+func set_fossil(on: bool, seconds := 0.0) -> void:
+	for i in _mats.size():
+		var want: Color = BONE if on else _cols[i]
+		if seconds <= 0.0:
+			_mats[i].albedo_color = want
+		else:
+			create_tween().tween_property(_mats[i], "albedo_color", want, seconds)
+
 # --- looks -----------------------------------------------------------------
 
 func _restyle(mi: MeshInstance3D, world_per_unit: float) -> void:
@@ -73,7 +103,11 @@ func _restyle(mi: MeshInstance3D, world_per_unit: float) -> void:
 		var old := src.surface_get_material(s)
 		var key := old.resource_name if old else ""
 		var col: Color = pal.get(key, old.albedo_color.lightened(0.25) if old is BaseMaterial3D else Color.WHITE)
+		if variant > 0 and col.s > 0.2:
+			col.h = fmod(col.h + VARIANT_SHIFT[variant % VARIANT_SHIFT.size()], 1.0)
 		var m := StandardMaterial3D.new()
+		_mats.append(m)
+		_cols.append(col)
 		m.albedo_color = col
 		m.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
 		m.specular_mode = BaseMaterial3D.SPECULAR_TOON

@@ -1,9 +1,12 @@
 shader_type spatial;
 render_mode diffuse_toon, specular_disabled;
-// Grassy ground with soft patches, and a warm earth clearing round the nest.
+// Grassy ground with soft patches, and warm earth (or sand) under the play spots.
 uniform vec3 grass_a : source_color = vec3(0.40, 0.66, 0.27);
 uniform vec3 grass_b : source_color = vec3(0.55, 0.74, 0.30);
 uniform vec3 earth : source_color = vec3(0.72, 0.58, 0.38);
+uniform vec3 sand_col : source_color = vec3(0.90, 0.80, 0.56);
+uniform vec4 patches[4];   // x, z, radius x, radius z
+uniform float sand[4];     // 1 = sandy dig site instead of earth
 varying vec3 wp;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
@@ -14,9 +17,16 @@ float noise(vec2 p) {
 void vertex() { wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
 void fragment() {
 	float n = noise(wp.xz * 0.18) * 0.6 + noise(wp.xz * 0.7) * 0.4;
-	vec3 g = mix(grass_a, grass_b, smoothstep(0.3, 0.75, n));
-	float r = length(wp.xz * vec2(0.62, 1.0)) + (noise(wp.xz * 1.3) - 0.5) * 0.9;
-	float dirt = 1.0 - smoothstep(2.6, 3.6, r);
-	ALBEDO = mix(g, earth * (0.9 + 0.2 * n), dirt);
+	vec3 col = mix(grass_a, grass_b, smoothstep(0.3, 0.75, n));
+	float wobble = (noise(wp.xz * 1.3) - 0.5) * 0.25;
+	for (int i = 0; i < 4; i++) {
+		vec4 p = patches[i];
+		if (p.z <= 0.0) continue;
+		float r = length((wp.xz - p.xy) / p.zw) + wobble;
+		float a = 1.0 - smoothstep(0.85, 1.15, r);
+		vec3 dirt = mix(earth, sand_col, sand[i]) * (0.9 + 0.2 * n);
+		col = mix(col, dirt, a);
+	}
+	ALBEDO = col;
 	ROUGHNESS = 1.0;
 }

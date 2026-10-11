@@ -13,7 +13,7 @@ const INK := Color(0.22, 0.32, 0.15)
 const CREAM := Color(1, 0.98, 0.9, 0.95)
 const GREEN := Color(0.35, 0.55, 0.25)
 const ACTIVITIES := [["nest", "🥚", "Nest"], ["hide", "🌿", "Hide"], ["river", "🌊", "River"],
-	["dig", "🦴", "Dig"], ["feed", "🍓", "Feed"], ["park", "🦕", "My park"]]
+	["dig", "🦴", "Dig"], ["feed", "🍓", "Feed"], ["sky", "☁️", "Catch"], ["park", "🦕", "My park"]]
 
 var font: Font
 var question: PanelContainer
@@ -199,13 +199,13 @@ func _build_menu(root: Control) -> void:
 		targets.add_child(b)
 		_target_buttons[t] = b
 	var grid := GridContainer.new()
-	grid.columns = 3
+	grid.columns = 4
 	grid.add_theme_constant_override("h_separation", 18)
 	grid.add_theme_constant_override("v_separation", 18)
 	menu.add_child(grid)
 	for a in ACTIVITIES:
-		var b := _button("%s  %s" % [a[1], a[2]], 46)
-		b.custom_minimum_size = Vector2(290, 110)
+		var b := _button("%s  %s" % [a[1], a[2]], 42)
+		b.custom_minimum_size = Vector2(262, 104)
 		var name: String = a[0]
 		b.pressed.connect(func(): activity_chosen.emit(name))
 		grid.add_child(b)

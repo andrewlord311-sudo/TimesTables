@@ -71,14 +71,17 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
   cursor: pointer; z-index: 5;
 }
 
-/* Stage selector row (7 stages) */
-.stage-row { display: flex; gap: 6px; margin: 44px 0 6px; flex-wrap: wrap; justify-content: center; }
+/* Stage selector row (7 stages): a labelled pill per stage, then a line saying which tables it uses */
+.stage-row { display: flex; gap: 6px; margin: 44px 0 4px; flex-wrap: wrap; justify-content: center; max-width: 440px; }
 .stage-btn {
-  width: 34px; height: 34px; border-radius: 50%;
-  border: none; font-family: inherit; font-weight: bold; font-size: 14px;
-  background: #e5ddc8; color: #6b4c2a; cursor: pointer;
+  min-width: 64px; padding: 6px 8px; border-radius: 14px;
+  border: none; font-family: inherit; color: #6b4c2a; background: #e5ddc8; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; line-height: 1.15;
 }
+.stage-num { font-weight: bold; font-size: 13px; }
+.stage-new { font-size: 12px; opacity: 0.85; }
 .stage-btn.active { background: #f4a83f; color: white; box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
+.stage-caption { margin: 0 0 8px; font-size: 15px; font-weight: bold; color: #6b4c2a; text-align: center; }
 
 /* Progress dots */
 .progress-dots { display: flex; gap: 8px; margin-bottom: 6px; }

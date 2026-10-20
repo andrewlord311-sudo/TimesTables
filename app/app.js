@@ -424,20 +424,51 @@ function resetPad(prefix, question, onChoice) {
 }
 
 // ---- Stage selector (shared row builder for both games) ----
-let feedStage = 1;
-let jigsawStage = 1;
+// The last stage she chose in each game is remembered, so coming back later
+// picks up where she was rather than always starting at stage 1.
+const STAGE_KEY = 'ttg_last_stage';
+function loadLastStages() {
+  try { return JSON.parse(localStorage.getItem(STAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+function validStage(n) { return STAGES.some(s => s.id === n) ? n : 1; }
+function rememberStage(game, id) {
+  const all = loadLastStages();
+  all[game] = id;
+  try { localStorage.setItem(STAGE_KEY, JSON.stringify(all)); } catch {}
+}
+let feedStage = validStage(loadLastStages().feed);
+let jigsawStage = validStage(loadLastStages().jigsaw);
 
+// "1, 2, 3, 5 and 10" -- the tables in a stage, in ascending order.
+function tablesText(stage) {
+  const t = [...stage.tables].sort((a, b) => a - b);
+  return t.length > 1 ? `${t.slice(0, -1).join(', ')} and ${t[t.length - 1]}` : String(t[0]);
+}
+
+// Each button says which stage it is and which table it adds (stage 1 is the
+// starting set); a tick marks stages she has already cleared. The line under
+// the row lists every table in the chosen stage, so "which numbers is this?"
+// is always on screen.
 function renderStageRow(containerId, activeStage, onSelect) {
   const wrap = document.getElementById(containerId);
+  const cleared = loadProgress().clearedStages;
   wrap.innerHTML = '';
-  STAGES.forEach(s => {
+  STAGES.forEach((s, i) => {
     const btn = document.createElement('button');
     btn.className = 'stage-btn' + (s.id === activeStage ? ' active' : '');
-    btn.textContent = s.id;
-    btn.title = s.label;
+    const added = i === 0 ? '1 2 5 10' : `+ ${s.tables[s.tables.length - 1]}s`;
+    btn.innerHTML = `<span class="stage-num">Stage ${s.id}${cleared.includes(s.id) ? ' ✓' : ''}</span>` +
+                    `<span class="stage-new">${added}</span>`;
+    btn.title = `Stage ${s.id}: the ${tablesText(s)} times tables`;
     btn.addEventListener('click', () => onSelect(s.id));
     wrap.appendChild(btn);
   });
+  const caption = document.getElementById(containerId + '-caption');
+  if (caption) {
+    const stage = STAGES.find(s => s.id === activeStage);
+    caption.textContent = `Stage ${stage.id}: the ${tablesText(stage)} times tables`;
+  }
 }
 
 // ---- Feed Pip ----
@@ -455,7 +486,7 @@ let feedQuestion = null;
 function startFeedGame() {
   feedRound = 0;
   feedMistakes = 0;
-  renderStageRow('feed-stages', feedStage, (id) => { feedStage = id; startFeedGame(); });
+  renderStageRow('feed-stages', feedStage, (id) => { feedStage = id; rememberStage('feed', id); startFeedGame(); });
   renderFeedDots();
   showScreen('screen-feed');
   nextFeedRound();
@@ -550,7 +581,7 @@ function startJigsawGame() {
   document.getElementById('jigsaw-pic').innerHTML = `<img src="${currentJigsawImage.file}" alt="${currentJigsawImage.name}">`;
   document.getElementById('jigsaw-stage-box')
     .classList.toggle('portrait', !!currentJigsawImage.portrait);
-  renderStageRow('jigsaw-stages', jigsawStage, (id) => { jigsawStage = id; startJigsawGame(); });
+  renderStageRow('jigsaw-stages', jigsawStage, (id) => { jigsawStage = id; rememberStage('jigsaw', id); startJigsawGame(); });
   renderJigsawGrid();
   showScreen('screen-jigsaw');
   nextJigsawRound();
@@ -798,6 +829,7 @@ function finishSession(game) {
     // pattern used across the sibling Nuggets/Phonics apps.
     if (game === 'jigsaw' && jigsawStage < STAGES.length) {
       jigsawStage++;
+      rememberStage('jigsaw', jigsawStage);
     }
   }
 

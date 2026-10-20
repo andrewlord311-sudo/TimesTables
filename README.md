@@ -25,6 +25,11 @@ known ones about a third as often. There is no visible timer: a clock on the
 screen mostly just makes children anxious, and the information is as good
 collected quietly.
 
+The stage row at the top of Feed Pip and the Jigsaw is the way back to any stage:
+each button says which stage it is and the table it adds (a tick marks cleared
+stages), and a line under it lists every table in the chosen stage. The last
+stage chosen in each game is remembered in `localStorage` (`ttg_last_stage`).
+
 Stage 1 and 2 unlock **Dreamy and Evie**, Clara's own guinea pigs, before the
 invented ones — and stage 1's jigsaw is a real photo of her holding Evie.
 

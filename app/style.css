@@ -310,3 +310,41 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
 }
 .big-btn.secondary { background: #ffd166; color: #2b2b2b; }
 .big-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.1); }
+
+/* ---- Column Maths ---- */
+.columns-sum { display: grid; gap: 4px 6px; align-items: center; justify-items: center; background: white; border-radius: 24px; padding: 14px 18px; box-shadow: 0 6px 0 rgba(0,0,0,0.06); margin: 6px 0; }
+.chead { font-weight: bold; font-size: 18px; width: 100%; text-align: center; border-radius: 10px; padding: 2px 0; color: white; }
+.chead.h0 { background: #e8833a; } .chead.h1 { background: #4a9bd8; } .chead.h2 { background: #5cb85c; } .chead.h3 { background: #a06cd5; }
+.digit { font-size: 52px; font-weight: bold; line-height: 1.1; width: 100%; text-align: center; position: relative; }
+.digit.struck { color: #bbb; text-decoration: line-through 4px #d9534f; }
+.topwrap { display: flex; align-items: center; justify-content: center; width: 100%; gap: 2px; }
+.topwrap .digit { width: auto; }
+.opsign { font-size: 46px; font-weight: bold; color: #6b4c2a; justify-self: center; }
+.cline { height: 5px; background: #2b2b2b; border-radius: 3px; width: 100%; margin: 2px 0; }
+.rowlab { font-size: 12px; color: #6b4c2a; font-weight: bold; }
+.ccell { font-family: inherit; font-weight: bold; color: #2b6e2b; border: 3px dashed #c9bfa8; background: #fffaf0; border-radius: 14px; cursor: pointer; }
+.ccell.big { width: 70px; height: 72px; font-size: 46px; }
+.ccell.small { width: 44px; height: 44px; font-size: 28px; }
+.ccell.tiny { width: 26px; height: 30px; font-size: 18px; border-width: 2px; border-radius: 8px; }
+.ccell.sel { border-style: solid; border-color: #4a9bd8; background: #e8f4fd; box-shadow: 0 0 0 4px rgba(74,155,216,0.25); }
+.ccell.bad { border-color: #d9534f; background: #fdeaea; animation: wob 0.35s; }
+.ccell.good { border-style: solid; border-color: #5cb85c; background: #eaf7ea; }
+@keyframes wob { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.columns-msg { min-height: 40px; max-width: 520px; text-align: center; font-size: 18px; margin: 6px 0; }
+.columns-msg.warn { color: #a04a00; } .columns-msg.ok { color: #2b7a2b; font-weight: bold; font-size: 22px; }
+.ckeys { display: grid; grid-template-columns: repeat(6, 56px); gap: 6px; margin: 4px 0 8px; }
+.ckey { font-family: inherit; font-size: 28px; font-weight: bold; height: 46px; border: none; border-radius: 14px; background: white; box-shadow: 0 4px 0 rgba(0,0,0,0.1); cursor: pointer; }
+.ckey.del { background: #fde8e8; }
+@media (max-height: 760px) { .digit { font-size: 40px; } .ccell.big { width: 58px; height: 58px; font-size: 36px; } .ckey { height: 44px; } }
+.hidden { display: none !important; }
+
+/* ---- Guinea Pig Garden ---- */
+#screen-garden { padding: 0; justify-content: flex-start; overflow: hidden; }
+#garden-canvas { width: 100vw; flex: 1; min-height: 0; display: block; touch-action: none; background: #bfe6ff; }
+.garden-stars { position: absolute; top: 14px; right: 16px; z-index: 5; background: white; border-radius: 18px; padding: 8px 16px; font-size: 22px; font-weight: bold; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+.garden-msg { margin: 6px 0 2px; min-height: 22px; font-size: 16px; color: #4a3a22; text-align: center; }
+.garden-shop { display: flex; gap: 8px; overflow-x: auto; padding: 6px 12px 12px; width: 100vw; }
+.shop-item { flex: 0 0 auto; width: 84px; font-family: inherit; border: 3px solid transparent; border-radius: 16px; background: white; padding: 6px 4px; box-shadow: 0 4px 0 rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; }
+.shop-item .si-e { font-size: 30px; } .shop-item .si-n { font-size: 12px; font-weight: bold; } .shop-item .si-c { font-size: 12px; color: #8a6d00; }
+.shop-item.sel { border-color: #4a9bd8; background: #e8f4fd; } .shop-item.poor { opacity: 0.55; }
+.home-stars { margin-left: 8px; font-weight: bold; color: #8a6d00; }

@@ -11,7 +11,7 @@
 <!-- HOME -->
 <section id="screen-home" class="screen active">
   <h1>🐹 Pip's Times Tables</h1>
-  <p class="subtitle">Tap a game to start!</p>
+  <p class="subtitle">Tap a game to start! <span id="home-stars" class="home-stars"></span></p>
 
   <div class="farm-wrap">
     <h2 class="farm-title">Guinea Pig Farm</h2>
@@ -35,6 +35,14 @@
     <button class="game-tile" data-game="run">
       <span class="tile-emoji">🏃</span>
       <span>Guinea Pig<br>Run</span>
+    </button>
+    <button class="game-tile" data-game="columns">
+      <span class="tile-emoji">➕</span>
+      <span>Column<br>Maths</span>
+    </button>
+    <button class="game-tile" data-game="garden">
+      <span class="tile-emoji">🌳</span>
+      <span>My<br>Garden</span>
     </button>
   </div>
 </section>
@@ -106,6 +114,29 @@
   </div>
 </section>
 
+<!-- COLUMN MATHS: Year 3 column addition and subtraction (see columns.js) -->
+<section id="screen-columns" class="screen">
+  <button class="back-btn" data-back>←</button>
+  <div class="stage-row" id="columns-stages"></div>
+  <p class="stage-caption" id="columns-stages-caption"></p>
+  <div class="progress-dots" id="columns-dots"></div>
+  <div class="columns-sum" id="columns-sum"></div>
+  <p class="columns-msg" id="columns-msg"></p>
+  <button class="stuck-btn hidden" id="columns-show">Show me one step</button>
+  <div class="ckeys" id="columns-keys"></div>
+  <button class="big-btn" id="columns-check">Check ✓</button>
+  <button class="big-btn hidden" id="columns-next">Next sum</button>
+</section>
+
+<!-- GUINEA PIG GARDEN: the 3D reward world, spent with stars (see garden.js) -->
+<section id="screen-garden" class="screen">
+  <button class="back-btn" data-back>←</button>
+  <div class="garden-stars" id="garden-stars">⭐ 0</div>
+  <canvas id="garden-canvas"></canvas>
+  <p class="garden-msg" id="garden-msg"></p>
+  <div class="garden-shop" id="garden-shop"></div>
+</section>
+
 <!-- COMPLETE -->
 <section id="screen-complete" class="screen">
   <div class="complete-card">
@@ -124,6 +155,8 @@
   </div>
 </section>
 
+<script src="columns.js"></script>
+<script src="garden.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

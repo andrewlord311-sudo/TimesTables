@@ -53,9 +53,34 @@ practice into a test and mostly makes children hurry and panic. The completion
 screen says nothing about time at all — not even "a new best", which would
 give the game away. Best and recent times appear only under "For grown-ups".
 
+## Column Maths
+
+Year 3 column addition and subtraction (`app/columns.js`). The sum is laid out
+in columns (H T U, and Th at stage 7). Clara taps a space, types a digit, and
+fills in the answer **and** the carry (addition: little boxes under the answer)
+or the exchange (subtraction: a box above the top digit for what is left, and a
+tiny box beside the digit for the extra 1 ten). **Check** marks each space;
+the hint names the column to look at but never gives the digit, and after
+three checks "Show me one step" fills one space. Seven stages: add with no
+carry, one carry, two carries; subtract with no exchange, one, two; then
+4-digit sums. 5 sums a session, 1-3 stars each (fewer checks, more stars).
+A stage clears with 4 of 5 done and at most one "show me". The generator never
+makes a zero in the middle that needs a chain exchange (not Year 3).
+
+## Guinea Pig Garden (the rewards)
+
+`app/garden.js`, a 3D world in Three.js r128 (loaded from cdnjs on first visit,
+no model files: everything is built from shapes). Every game earns **stars**
+(`addStars`, stored in `ttg_rewards`): 5 for finishing Feed, Jigsaw or Run, and
+1-3 per column sum. Stars are spent in the garden on flowers, trees, a hutch,
+pond, rainbow and more (`GARDEN_ITEMS`, saved in `ttg_garden`). "Tidy up"
+gives the stars back, so nothing is a mistake. The guinea pigs she has
+unlocked on the farm, plus Pip, wander in it; tap one and it squeaks. Drag to
+turn the camera, scroll to zoom.
+
 ## The files
 
-Everything is in `app/` — `index.html`, `app.js`, `style.css`, and the guinea
+Everything is in `app/` — `index.html`, `app.js`, `columns.js`, `garden.js`, `style.css`, and the guinea
 pig SVGs with their idle, happy and sad animations.
 
 `app.js` is a single file and is the source of truth for the stage progression

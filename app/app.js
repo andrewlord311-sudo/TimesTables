@@ -137,6 +137,8 @@ function loadProgress() {
 function saveProgress(p) { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); }
 
 function renderFarm() {
+  const hs = document.getElementById('home-stars');
+  if (hs) hs.textContent = '⭐ ' + starBalance();
   const progress = loadProgress();
   const grid = document.getElementById('farm-grid');
   grid.innerHTML = '';
@@ -198,10 +200,12 @@ document.querySelectorAll('.game-tile').forEach(btn => {
     if (game === 'feed') startFeedGame();
     if (game === 'jigsaw') startJigsawGame();
     if (game === 'run') startRunGame();
+    if (game === 'columns') startColumnsGame();
+    if (game === 'garden') startGardenGame();
   });
 });
 document.querySelectorAll('[data-back]').forEach(btn => {
-  btn.addEventListener('click', () => { renderFarm(); showScreen('screen-home'); });
+  btn.addEventListener('click', () => { stopGarden(); renderFarm(); showScreen('screen-home'); });
 });
 document.getElementById('home-btn').addEventListener('click', () => { renderFarm(); showScreen('screen-home'); });
 
@@ -209,6 +213,7 @@ let lastCompletedGame = null;
 document.getElementById('play-again-btn').addEventListener('click', () => {
   if (lastCompletedGame === 'feed') startFeedGame();
   else if (lastCompletedGame === 'run') startRunGame();
+  else if (lastCompletedGame === 'columns') startColumnsGame();
   else startJigsawGame();
 });
 
@@ -781,12 +786,14 @@ function finishRun() {
 
   lastCompletedGame = 'run';
   playCompleteFanfare();
+  addStars(5);   // spent in the garden
+  document.getElementById('complete-emoji').textContent = '⭐️🎉⭐️';
   document.getElementById('new-pig-reveal').classList.add('hidden');
   document.getElementById('complete-title').textContent = 'You finished the run!';
   // Deliberately says nothing about the time, not even "a new best" -- that
   // would tell her she is being timed, which is exactly what we are avoiding.
   document.getElementById('complete-message').textContent =
-    'Evie jumped every obstacle and made it all the way to the flag!';
+    'Evie jumped every obstacle and made it all the way to the flag! +5 ⭐ for the garden.';
   showScreen('screen-complete');
 }
 
@@ -794,6 +801,8 @@ function finishRun() {
 function finishSession(game) {
   lastCompletedGame = game;
   playCompleteFanfare();
+  addStars(5);   // spent in the garden
+  document.getElementById('complete-emoji').textContent = '⭐️🎉⭐️';
   const title = document.getElementById('complete-title');
   const message = document.getElementById('complete-message');
   const reveal = document.getElementById('new-pig-reveal');
@@ -809,10 +818,10 @@ function finishSession(game) {
 
   if (game === 'feed') {
     title.textContent = 'Pip is full!';
-    message.textContent = 'Great counting - every carrot earned!';
+    message.textContent = 'Great counting - every carrot earned! +5 ⭐ for the garden.';
   } else {
     title.textContent = 'Picture complete!';
-    message.textContent = `You matched every answer to reveal ${currentJigsawImage.name}!`;
+    message.textContent = `You matched every answer to reveal ${currentJigsawImage.name}! +5 ⭐ for the garden.`;
   }
 
   if (stageCleared) {
@@ -910,7 +919,7 @@ document.getElementById('grownups-btn').addEventListener('click', () => {
 // reachable directly: ?game=feed | jigsaw | run. Anything else, or no
 // parameter at all, opens the home screen exactly as before -- and the back
 // and Home buttons still work, so arriving by deep link is never a dead end.
-const DEEP_LINKS = { feed: startFeedGame, jigsaw: startJigsawGame, run: startRunGame };
+const DEEP_LINKS = { feed: startFeedGame, jigsaw: startJigsawGame, run: startRunGame, columns: startColumnsGame, garden: startGardenGame };
 
 // Arriving by deep link means no game tile was ever tapped, and tapping a
 // tile is what used to resume the AudioContext (browsers refuse to start

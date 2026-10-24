@@ -13,7 +13,7 @@ const INK := Color(0.22, 0.32, 0.15)
 const CREAM := Color(1, 0.98, 0.9, 0.95)
 const GREEN := Color(0.35, 0.55, 0.25)
 const ACTIVITIES := [["nest", "🥚", "Nest"], ["hide", "🌿", "Hide"], ["river", "🌊", "River"],
-	["dig", "🦴", "Dig"], ["feed", "🍓", "Feed"], ["sky", "☁️", "Catch"], ["sums", "➕", "Add"], ["park", "🦕", "My park"]]
+	["dig", "🦴", "Dig"], ["feed", "🍓", "Feed"], ["sky", "☁️", "Catch"], ["sums", "➕", "Add"], ["jurassic", "🌋", "Dino World"]]
 
 var font: Font
 var question: PanelContainer

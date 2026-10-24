@@ -4,12 +4,13 @@ extends Node
 ## correct but slow answer counts as "not yet known", like Pip's Times Tables.
 
 const SAVE := "user://dino_ten.json"
-const SPECIES := ["Triceratops", "Parasaurolophus", "Stegosaurus", "Apatosaurus", "Velociraptor", "Trex"]
+const Species := preload("res://scripts/species.gd")
 const EGGS_PER_HATCH := 3
 
 var target := 10
 var eggs := 0                 # eggs earned in total
 var park: Array = []          # hatched dinosaurs: {"species": .., "colour": idx}
+var seen: Array = []          # species met in Dino World (the dino book)
 var stats := {}               # "10:7" -> {"seen": n, "right": n, "slow": n}
 var add_levels := {}          # "5"/"10" -> how far up the Add game he has got (0 = just +1)
 var rng := RandomNumberGenerator.new()
@@ -48,6 +49,14 @@ func pick_part(exclude := -1) -> int:
 			return p
 	return target / 2
 
+## Note a species as met in Dino World. Returns true the first time.
+func see(sp: String) -> bool:
+	if seen.has(sp):
+		return false
+	seen.append(sp)
+	save_game()
+	return true
+
 func get_add_level() -> int:
 	return clampi(int(add_levels.get(str(target), 0)), 0, 4)
 
@@ -73,8 +82,18 @@ func add_egg() -> Dictionary:
 	eggs += 1
 	var hatched := {}
 	if eggs % EGGS_PER_HATCH == 0:
-		var n := park.size()
-		hatched = {"species": SPECIES[n % SPECIES.size()], "colour": n / SPECIES.size()}
+		# A species he hasn't got yet if there is one, otherwise a new colour of one he has.
+		var have := {}
+		for p in park:
+			have[p["species"]] = int(have.get(p["species"], 0)) + 1
+		var sp: String = ""
+		for s in Species.HATCH_ORDER:
+			if not have.has(s):
+				sp = s
+				break
+		if sp == "":
+			sp = Species.HATCH_ORDER[park.size() % Species.HATCH_ORDER.size()]
+		hatched = {"species": sp, "colour": int(have.get(sp, 0)) % 5}
 		park.append(hatched)
 	save_game()
 	return hatched
@@ -88,7 +107,7 @@ func save_game() -> void:
 		return
 	var f := FileAccess.open(SAVE, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"eggs": eggs, "park": park, "stats": stats, "target": target, "add_levels": add_levels}))
+		f.store_string(JSON.stringify({"eggs": eggs, "park": park, "stats": stats, "target": target, "add_levels": add_levels, "seen": seen}))
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE):
@@ -100,3 +119,4 @@ func load_game() -> void:
 		stats = data.get("stats", {})
 		target = int(data.get("target", 10))
 		add_levels = data.get("add_levels", {})
+		seen = data.get("seen", [])

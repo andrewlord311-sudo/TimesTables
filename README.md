@@ -56,7 +56,7 @@ give the game away. Best and recent times appear only under "For grown-ups".
 ## Column Maths
 
 Year 3 column addition and subtraction (`app/columns.js`). The sum is laid out
-in columns (H T U, and Th at stage 7). Clara taps a space, types a digit, and
+in columns (H T O, and Th at stage 7). Clara taps a space, types a digit, and
 fills in the answer **and** the carry (addition: little boxes under the answer)
 or the exchange (subtraction: a box above the top digit for what is left, and a
 tiny box beside the digit for the extra 1 ten). **Check** marks each space;

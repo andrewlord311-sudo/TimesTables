@@ -152,6 +152,17 @@ function renderFarm() {
     label.textContent = unlocked ? pig.name : `Stage ${pig.id}`;
     const wrap = document.createElement('div');
     wrap.className = 'farm-slot-wrap';
+    // Tap a pig: it hops and squeaks, and says hello. A locked slot says how to unlock it.
+    wrap.addEventListener('click', () => {
+      const note = document.getElementById('farm-note');
+      if (unlocked) {
+        playTone(900, actx.currentTime, 0.08, 0.15); playTone(1250, actx.currentTime + 0.08, 0.1, 0.15);
+        slot.classList.remove('hop'); void slot.offsetWidth; slot.classList.add('hop');
+        note.textContent = pig.real ? `${pig.name} says wheek! 💕 (a real guinea pig!)` : `${pig.name} says wheek! 💕`;
+      } else {
+        note.textContent = `Finish stage ${pig.id} to meet this guinea pig.`;
+      }
+    });
     wrap.appendChild(slot);
     wrap.appendChild(label);
     grid.appendChild(wrap);

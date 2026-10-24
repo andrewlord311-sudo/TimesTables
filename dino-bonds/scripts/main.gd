@@ -305,7 +305,7 @@ func bot_answer(top: int) -> int:
 
 func _run_bot() -> void:
 	await get_tree().create_timer(0.5).timeout
-	var acts := ["nest", "hide", "river", "dig", "feed", "sky", "park"]
+	var acts := ["nest", "hide", "river", "dig", "feed", "sky", "sums", "park"]
 	if bot_only != "":
 		acts = Array(bot_only.split(","))
 	for t in bot_targets:

@@ -26,10 +26,10 @@ func wait(seconds: float) -> void:
 	await get_tree().create_timer(seconds).timeout
 
 ## Ask a number question; returns the answer, or -1 if stopped.
-func ask_number(text: String, right: int, top := -1) -> int:
+func ask_number(text: String, right: int, top := -1, lo := 0) -> int:
 	game.ui.ask(text)
 	game.expected = right
-	var n: int = await game.ui.ask_number(target() if top < 0 else top)
+	var n: int = await game.ui.ask_number(target() if top < 0 else top, 5, lo)
 	game.expected = -1
 	return n
 

@@ -11,6 +11,7 @@ var target := 10
 var eggs := 0                 # eggs earned in total
 var park: Array = []          # hatched dinosaurs: {"species": .., "colour": idx}
 var stats := {}               # "10:7" -> {"seen": n, "right": n, "slow": n}
+var add_levels := {}          # "5"/"10" -> how far up the Add game he has got (0 = just +1)
 var rng := RandomNumberGenerator.new()
 var no_save := false   # the test bot plays without touching Felix's save
 
@@ -47,6 +48,13 @@ func pick_part(exclude := -1) -> int:
 			return p
 	return target / 2
 
+func get_add_level() -> int:
+	return clampi(int(add_levels.get(str(target), 0)), 0, 4)
+
+func set_add_level(l: int) -> void:
+	add_levels[str(target)] = clampi(l, 0, 4)
+	save_game()
+
 func record(part: int, right: bool, seconds: float) -> void:
 	var k := key(target, part)
 	var st: Dictionary = stats.get(k, {"seen": 0, "right": 0, "slow": 0})
@@ -80,7 +88,7 @@ func save_game() -> void:
 		return
 	var f := FileAccess.open(SAVE, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"eggs": eggs, "park": park, "stats": stats, "target": target}))
+		f.store_string(JSON.stringify({"eggs": eggs, "park": park, "stats": stats, "target": target, "add_levels": add_levels}))
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE):
@@ -91,3 +99,4 @@ func load_game() -> void:
 		park = data.get("park", [])
 		stats = data.get("stats", {})
 		target = int(data.get("target", 10))
+		add_levels = data.get("add_levels", {})

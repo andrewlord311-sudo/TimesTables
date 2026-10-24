@@ -16,6 +16,7 @@ On the valley screen, click the ground to walk the T. rex; space makes it roar.
 | 🦴 Dig | match bone pieces that make 10 — every way, 1+9 … 5+5 — and the fossil comes alive |
 | 🍓 Feed | red and blue berries in Rex's bowl to make exactly 10, a new way each time |
 | ☁️ Catch | the speed round: "7 and ? make 10" — pterosaurs fly over carrying numbers; tap the partner. 8 catches, a little faster each time, timed quietly |
+| ➕ Add | **Dino Sums** — two herds walk in: "3 and 2. How many altogether?", then every dinosaur is counted with a number over it. **Make 5** uses numbers 1–5, **Make 10** uses 1–10. Starts with just +1, then +1 or +2, +3, up to the full range; moves up a step after a visit with 4 of 5 right (saved per range as `add_levels`) |
 | 🦕 My park | every dinosaur hatched so far wanders here; tap one for its fact card |
 
 Each place is 5 rounds. Every right answer is an egg; every 3 eggs hatch a baby
@@ -28,6 +29,7 @@ Progress is saved in `~/Library/Application Support/Godot/app_userdata/Dino Ten/
 ## Layout
 - `scripts/main.gd` — the game: menu, camera, walking, tapping, eggs and hatching, test bot
 - `scripts/activity.gd` + `scripts/activities/*.gd` — one file per place
+- `scripts/activities/sums.gd` — Dino Sums (addition); levels in `MAX_ADDEND`, reuses the nest's spot
 - `scripts/world.gd` — the valley (spots and camera views in `SPOTS`)
 - `scripts/pterosaur.gd` — the pterosaur, built in code (no free animated one exists): lofted body and beak, crest, flapping two-part wings, eyes
 - `scripts/dino.gd` — friendlier Quaternius dinosaurs: smooth toon shading, outline, big eyes,

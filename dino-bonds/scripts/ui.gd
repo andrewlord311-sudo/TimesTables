@@ -13,7 +13,7 @@ const INK := Color(0.22, 0.32, 0.15)
 const CREAM := Color(1, 0.98, 0.9, 0.95)
 const GREEN := Color(0.35, 0.55, 0.25)
 const ACTIVITIES := [["nest", "🥚", "Nest"], ["hide", "🌿", "Hide"], ["river", "🌊", "River"],
-	["dig", "🦴", "Dig"], ["feed", "🍓", "Feed"], ["sky", "☁️", "Catch"], ["park", "🦕", "My park"]]
+	["dig", "🦴", "Dig"], ["feed", "🍓", "Feed"], ["sky", "☁️", "Catch"], ["sums", "➕", "Add"], ["park", "🦕", "My park"]]
 
 var font: Font
 var question: PanelContainer
@@ -271,26 +271,27 @@ func ask(text: String) -> void:
 		create_tween().tween_property(question, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK)
 
 ## Show buttons 0..top. Returns the number chosen (await it).
-func ask_number(top: int, dots_per_row := 5) -> int:
+func ask_number(top: int, dots_per_row := 5, lo := 0) -> int:
 	clear_answers()
-	for n in range(0, top + 1):
+	var span := top - lo + 1
+	for n in range(lo, top + 1):
 		var b := _button("", 46)
-		b.custom_minimum_size = Vector2(92 if top > 5 else 130, 120)
+		b.custom_minimum_size = Vector2(130 if span <= 6 else (92 if span <= 11 else 50), 120)
 		var v := VBoxContainer.new()
 		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		v.set_anchors_preset(Control.PRESET_FULL_RECT)
 		v.alignment = BoxContainer.ALIGNMENT_CENTER
 		var l := Label.new()
 		l.text = str(n)
-		l.add_theme_font_size_override("font_size", 50)
+		l.add_theme_font_size_override("font_size", 50 if span <= 11 else 38)
 		l.add_theme_color_override("font_color", INK)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		v.add_child(l)
 		var d := Dots.new()
 		d.count = n
-		d.per_row = dots_per_row
-		d.custom_minimum_size = Vector2(80, 30)
+		d.per_row = dots_per_row if span <= 11 else 10
+		d.custom_minimum_size = Vector2(80 if span <= 11 else 42, 30)
 		d.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		v.add_child(d)
 		b.add_child(v)

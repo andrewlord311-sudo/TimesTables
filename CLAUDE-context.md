@@ -1,6 +1,6 @@
 # Context for Claude -- TimesTables
 
-_Copied from Claude's memory on Andrew's Mac, 26 September 2026, by `vault-tools/sync-claude-context.py`. Don't edit by hand -- it's regenerated._
+_Copied from Claude's memory on Andrew's Mac, 24 October 2026, by `vault-tools/sync-claude-context.py`. Don't edit by hand -- it's regenerated._
 
 ## About Andrew
 
@@ -75,3 +75,9 @@ Also: stage-clear was 8 correct **in a row**, which is fair with 3 buttons and p
 **Arcade hub updated the same day:** `Andrew_Game_Apps/index.html` ("Tiny Games Arcade", live at andrewlord311-sudo.github.io/Andrew_Game_Apps/) now has **four tabs — Music / Games / Phonics / Times Tables**, with the chosen tab remembered in `localStorage`. Phonics and TimesTables are separate repos with their own Pages sites so they link by **absolute URL** (a relative path 404s); one card each because neither app supports deep-linking to a sub-game. **If you add deep-linking to TimesTables (`?game=run` etc.), the arcade can list the three games separately** — discussed, not built.
 
 **Still open:** Dreamy's colour filter is a guess from the background of the Evie photo — Andrew was asked for photos of both pigs and for confirmation. Division, and tables beyond 10 (the Y4 Multiplication Tables Check leans on 6,7,8,9,12), were discussed and not built.
+
+**10.10.26 — Number games umbrella.** Vault folder `Claude Projects/Kids learning/Number games/` (front door `Number games.md`) now holds all number games. Next: **Felix's dinosaur number bonds** (age 5, Reception, bonds to 5 and 10; plays with Andrew reading; no voice, very simple on-screen text; T. rex favourite; Mac first; Quaternius CC0 animated 3D dinos in Godot 4) — ideas only, `Dino number bonds — ideas.md`. Code to go in THIS repo as a Godot project folder (Andrew: keep number games together), not godot-games. Nothing built; start with a one-evening look test when he says go.
+
+**10.10.26 — look test built** (`TimesTables/dino-bonds/`, commit 51fb18a): Godot 4 Forward+, jungle clearing (Quaternius nature glTF, wind shader), toon T. rex with smoothed normals + outline + big eyes on head bone, ten-frame nest (7 eggs), Parasaurolophus + Stegosaurus. Gotcha: the pack's skin bind poses carry a scale — multiply mesh AABB/eye radii by it. Triceratops fixed 11.10.26 (meshes not oriented alike — measure + place eyes in skeleton space via bind pose × bone rest). Launcher `Play Dino Look Test.command`; clip in `look-test/` (gitignored). Awaiting Andrew/Felix verdict.
+
+**11.10.26 — Dino Ten v1 built** (`dino-bonds/`, commit 91a8b6e): menu (Make 5 / Make 10) + Nest (tap-fill ten frame), Hide (missing part behind giant ferns), River (number-line stones, Baby Rex, splash), Dig (all pairs → fossil comes alive), Feed (red+blue berries, burp), My park (hatched babies + fact cards). Synth SFX in `sfx.gd` (roar etc.), adaptive picking in `progress.gd`, save in Godot user dir `Dino Ten/dino_ten.json`. Test bot: `--bot --fast [--only=..] [--target=10] [--shots]` — never saves. Always headless `--check-only` before a windowed run (a parse error leaves a hung window). Felix loved it (11.10.26); Hide prompt now "I can see X"; in Melody's Games launcher; Pterosaur Catch speed round added (pterosaur built in code, `scripts/pterosaur.gd`).

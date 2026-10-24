@@ -4,6 +4,7 @@ Context carried over from Claude's memory on the Mac:
 
 @CLAUDE-context.md
 
+<!-- key-docs:start -->
 ## Key docs (read these before re-deriving anything)
 **Topic:** Pip's Times Tables multiplication game.
 
@@ -12,3 +13,4 @@ Context carried over from Claude's memory on the Mac:
 - Cross-project map: `Claude Projects/Project Index.md`
 
 No design doc: read `app.js` directly.
+<!-- key-docs:end -->

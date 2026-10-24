@@ -18,7 +18,7 @@ const COL_SUMS_PER_SESSION = 5;
 const COL_KEY = 'ttg_columns';
 const REWARDS_KEY = 'ttg_rewards';       // shared "stars" to spend in the garden
 const COL_NAMES = ['ones', 'tens', 'hundreds', 'thousands'];
-const COL_HEAD = ['U', 'T', 'H', 'Th'];
+const COL_HEAD = ['O', 'T', 'H', 'Th'];   // O for ones, as at school
 
 function loadCols() {
   try { return Object.assign({ cleared: [], last: 1 }, JSON.parse(localStorage.getItem(COL_KEY))); }

@@ -348,3 +348,8 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
 .shop-item .si-e { font-size: 30px; } .shop-item .si-n { font-size: 12px; font-weight: bold; } .shop-item .si-c { font-size: 12px; color: #8a6d00; }
 .shop-item.sel { border-color: #4a9bd8; background: #e8f4fd; } .shop-item.poor { opacity: 0.55; }
 .home-stars { margin-left: 8px; font-weight: bold; color: #8a6d00; }
+
+.farm-note { text-align: center; font-size: 14px; color: #6b4c2a; margin: 8px 0 0; min-height: 20px; }
+.farm-slot-wrap { cursor: pointer; }
+.farm-slot.hop { animation: farmhop 0.5s ease; }
+@keyframes farmhop { 30% { transform: translateY(-14px) rotate(-4deg); } 60% { transform: translateY(0) rotate(3deg); } 80% { transform: translateY(-5px); } }

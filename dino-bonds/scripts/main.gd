@@ -11,16 +11,10 @@ signal arrived
 
 const Dino := preload("res://scripts/dino.gd")
 const ROUNDS := 5
-const NAMES := {"Trex": "T. rex", "Triceratops": "Triceratops", "Parasaurolophus": "Parasaurolophus",
-	"Stegosaurus": "Stegosaurus", "Apatosaurus": "Apatosaurus", "Velociraptor": "Velociraptor"}
-const FACTS := {
-	"Trex": "T. rex had big teeth. It ate meat.",
-	"Triceratops": "Triceratops had three horns. It ate plants.",
-	"Parasaurolophus": "It had a long crest on its head. It ate plants.",
-	"Stegosaurus": "It had big plates on its back and spikes on its tail.",
-	"Apatosaurus": "It had a very long neck. It ate leaves from tall trees.",
-	"Velociraptor": "It was fast and had feathers. It was as big as a turkey.",
-}
+const Species := preload("res://scripts/species.gd")
+const KitDino := preload("res://scripts/kit_dino.gd")
+var NAMES := {}
+var FACTS := {}
 
 var world: Node3D
 var sfx: Node
@@ -45,9 +39,13 @@ var _walking := false
 var _walk_speed := 3.0
 var _bot_clock := 0.0
 var _busy := false
-var rex_scale_locked := false   # e.g. while Rex is Baby Rex at the river
+var rex_scale_locked := false
+var rex_driven := false        # Dino World steers Rex itself   # e.g. while Rex is Baby Rex at the river
 
 func _ready() -> void:
+	for sp in Species.ALL:
+		NAMES[sp] = Species.ALL[sp]["name"]
+		FACTS[sp] = Species.ALL[sp]["fact"]
 	var args := OS.get_cmdline_user_args()
 	bot = "--bot" in args
 	if "--fast" in args:
@@ -70,6 +68,10 @@ func _ready() -> void:
 		progress.eggs = 0
 		progress.park = []
 		progress.stats = {}
+		progress.seen = []
+		if "--fullpark" in args:   # Dino World with every baby, for looking at
+			for i in Species.HATCH_ORDER.size():
+				progress.park.append({"species": Species.HATCH_ORDER[i], "colour": 0})
 	ui = preload("res://scripts/ui.gd").new()
 	add_child(ui)
 	ui.set_eggs(progress.eggs)
@@ -150,7 +152,7 @@ func _process(delta: float) -> void:
 			var want := atan2(to.x, to.z)
 			rex.rotation.y = lerp_angle(rex.rotation.y, want, 1.0 - exp(-delta * 9.0))
 			rex.play("Run" if _walk_speed > 4.5 else "Walk", _walk_speed / (6.0 if _walk_speed > 4.5 else 2.6))
-	elif not rex.is_playing("Attack") and not rex.is_playing("Jump"):
+	elif not rex_driven and not rex.is_playing("Attack") and not rex.is_playing("Jump"):
 		rex.play("Idle")
 	if bot and activity and activity.has_method("bot_tick"):
 		_bot_clock += delta
@@ -173,6 +175,9 @@ func _tap(screen: Vector2) -> void:
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if hit and hit.collider:
 		tapped.emit(hit.collider)
+		return
+	if activity and activity.has_method("ground_tap") and dir.y < -0.01:
+		activity.ground_tap(from + dir * (-from.y / dir.y))
 		return
 	# On the menu, tapping the ground walks Rex there, just for fun.
 	if activity == null and not _busy and dir.y < -0.01:
@@ -226,6 +231,14 @@ func _on_home() -> void:
 	if activity and activity.has_method("stop"):
 		activity.stop()
 
+## Any dinosaur: the Quaternius six are models, the rest are built in code.
+## Call before add_child is fine: both set themselves up straight away.
+func make_dino(sp: String, h: float, colour := 0) -> Node3D:
+	var d: Node3D = KitDino.new() if Species.is_kit(sp) else Dino.new()
+	d.setup(sp, h, colour)
+	d.sfx = sfx
+	return d
+
 ## Correct! An egg, and maybe a hatching. Await it.
 func reward() -> void:
 	sfx.play("chime")
@@ -263,9 +276,8 @@ func hatch(info: Dictionary) -> void:
 		t.tween_property(egg, "rotation:z", 0.0, 0.1)
 		await t.finished
 		await get_tree().create_timer(0.25).timeout
-	var baby: Node3D = Dino.new()
+	var baby := make_dino(info["species"], 1.1, int(info["colour"]))
 	add_child(baby)
-	baby.setup(info["species"], 1.1, int(info["colour"]))
 	baby.sfx = sfx
 	baby.position = at
 	face(baby, cam.position)
@@ -276,7 +288,7 @@ func hatch(info: Dictionary) -> void:
 	g.tween_property(baby, "scale", Vector3.ONE, 0.35).set_trans(Tween.TRANS_BACK)
 	baby.play("Jump")
 	await g.finished
-	await ui.show_card("A baby %s!" % NAMES[info["species"]], FACTS[info["species"]] + "\nIt is in your park.")
+	await ui.show_card("A baby %s!" % NAMES[info["species"]], FACTS[info["species"]] + "\nIt is in Dino World.")
 	var off := create_tween()
 	off.tween_property(baby, "scale", Vector3.ONE * 0.01, 0.3)
 	await off.finished
@@ -305,7 +317,7 @@ func bot_answer(top: int) -> int:
 
 func _run_bot() -> void:
 	await get_tree().create_timer(0.5).timeout
-	var acts := ["nest", "hide", "river", "dig", "feed", "sky", "sums", "park"]
+	var acts := ["nest", "hide", "river", "dig", "feed", "sky", "sums", "jurassic"]
 	if bot_only != "":
 		acts = Array(bot_only.split(","))
 	for t in bot_targets:

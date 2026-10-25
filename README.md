@@ -89,6 +89,11 @@ there: each world has its own shop (palm trees and sandcastles, snowmen and
 igloos, lollipops and cakes, rockets and UFOs) and keeps its own things. On the
 Moon the guinea pigs jump very high.
 
+The guinea pigs use their things: now and then one trots to the **hutch** (or
+the **igloo** on Snowy Mountain), pops in through the door for a nap and comes
+back out, or runs through the **tunnel** (one at a time). Tap the hutch to see
+who's inside (`pigVisit`, `HOMES` in `garden.js`).
+
 Each world has its own **music**, made in code (`Music` in `garden.js`): a
 chord a bar, a bass note and a wandering tune in that world's scale and tempo
 (bouncy in Candy Land, bells in the snow, echoey on the Moon). It plays only in

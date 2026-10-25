@@ -4,14 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Pip's Times Tables</title>
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
 <!-- HOME -->
 <section id="screen-home" class="screen active">
   <h1>🐹 Pip's Times Tables</h1>
-  <p class="subtitle">Tap a game to start! <span id="home-stars" class="home-stars"></span></p>
+  <p class="subtitle">Tap a game to start!</p>
+  <!-- Her stars, always in view; tap to go and spend them in My Garden. -->
+  <button class="home-stars" id="home-stars" data-game="garden" title="My Garden">⭐ 0</button>
 
   <div class="farm-wrap">
     <h2 class="farm-title">Guinea Pig Farm</h2>
@@ -133,6 +135,7 @@
 <section id="screen-garden" class="screen">
   <button class="back-btn" data-back>←</button>
   <div class="garden-stars" id="garden-stars">⭐ 0</div>
+  <button class="garden-music" id="garden-music" title="Music on or off">🔊</button>
   <canvas id="garden-canvas"></canvas>
   <div class="garden-fade" id="garden-fade"></div>
   <p class="garden-msg" id="garden-msg"></p>
@@ -157,8 +160,8 @@
   </div>
 </section>
 
-<script src="columns.js?v=10"></script>
-<script src="garden.js?v=10"></script>
-<script src="app.js?v=10"></script>
+<script src="columns.js?v=12"></script>
+<script src="garden.js?v=12"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

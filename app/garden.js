@@ -275,8 +275,8 @@ function buildGarden() {
           sphere(0.09, 0xff4040, 0.5, 2.3, 0.9), sphere(0.09, 0xff4040, -0.4, 2.0, 0.95), sphere(0.09, 0xff4040, 0.9, 1.6, 0.6));
         break;
       case 'tunnel': {
-        const arch = new T.Mesh(new T.CylinderGeometry(0.6, 0.6, 1.8, 16, 1, true, Math.PI / 2, Math.PI), mat(0xe0903c, { side: T.DoubleSide }));
-        arch.rotation.x = Math.PI / 2; add(arch); break; }   // a half-pipe lying along z, open at both ends
+        const arch = new T.Mesh(new T.CylinderGeometry(0.9, 0.9, 2.6, 18, 1, true, Math.PI / 2, Math.PI), mat(0xe0903c, { side: T.DoubleSide }));
+        arch.rotation.x = Math.PI / 2; add(arch); break; }   // a half-pipe lying along z, open at both ends, big enough for a pig
       case 'pond': {
         const w = cyl(1.5, 1.5, 0.08, mat(0x4aa8e8, { flatShading: false, roughness: 0.2, metalness: 0.1 }), 0, 0.05, 0, 28);
         const r = new T.Mesh(new T.TorusGeometry(1.5, 0.16, 8, 28), mat(0x9a9a9a)); r.rotation.x = Math.PI / 2; r.position.y = 0.08;
@@ -447,7 +447,8 @@ function buildGarden() {
     itemGroup = new T.Group(); worldRoot.add(itemGroup);
     (G.worlds[w.id] || []).forEach(addItem);
     buildIslands();
-    pigs.forEach(p => { const a = rand() * 6.28, d = 2 + rand() * 4; p.mesh.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); p.tx = p.mesh.position.x; p.tz = p.mesh.position.z; });
+    pigs.forEach(p => { const a = rand() * 6.28, d = 2 + rand() * 4; p.mesh.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); p.tx = p.mesh.position.x; p.tz = p.mesh.position.z;
+      p.path = null; p.inside = 0; p.shrinking = p.growing = false; p.size = 1; p.mesh.visible = true; p.mesh.scale.setScalar(1); });
     renderGardenShop();
   }
   function addItem(rec) {
@@ -558,7 +559,7 @@ function buildGarden() {
       const a = rand() * 6.28, d = 2 + rand() * 4;
       mesh.position.set(Math.cos(a) * d, 0, Math.sin(a) * d);
       const name = id === 0 ? 'Pip' : (FARM_PIGS.find(f => f.id === id) || {}).name;
-      pigs.push({ id, name, mesh, tx: mesh.position.x, tz: mesh.position.z, wait: rand() * 2, hop: 0 });
+      pigs.push({ id, name, mesh, tx: mesh.position.x, tz: mesh.position.z, wait: rand() * 2, hop: 0, size: 1 });
     });
   }
 
@@ -638,7 +639,47 @@ function buildGarden() {
       pig.hop = 1;
       playTone(900, actx.currentTime, 0.08, 0.15); playTone(1250, actx.currentTime + 0.08, 0.1, 0.15);
       gardenHint(`${pig.name} says wheek! 💕`);
+      return;
     }
+    const ih2 = ray.intersectObjects(itemGroup.children, true)[0];
+    if (ih2) {
+      let o = ih2.object; while (o.parent !== itemGroup) o = o.parent;
+      if (HOMES[o.userData.rec.id]) {
+        const names = whoIsIn(o);
+        const where = o.userData.rec.id === 'igloo' ? 'igloo' : 'hutch';
+        gardenHint(names.length ? `${names.join(' and ')} ${names.length > 1 ? 'are' : 'is'} snuggled up in the ${where}! 💤` : `The ${where} is empty. The guinea pigs pop in for a nap now and then.`);
+      }
+    }
+  }
+
+  // ---- guinea pigs visiting the hutch, the igloo and the tunnel ----
+  // Points are in the item's own space (its door is on +z); walked in order.
+  const HOMES = { hutch: { out: 2.3, door: 1.2 }, igloo: { out: 2.6, door: 1.7 } };
+  function pigVisit(p) {
+    if (Math.random() > (window.__pigVisit || 0.4)) return false;   // (__pigVisit: testing aid)
+    const spots = placed.filter(m => m.userData.grow === undefined && (HOMES[m.userData.rec.id] || (m.userData.rec.id === 'tunnel' && !m.userData.busy)));
+    if (!spots.length) return false;
+    const it = spots[Math.floor(Math.random() * spots.length)];
+    const at = (x, z) => { const v = it.localToWorld(new T.Vector3(x, 0, z)); return { x: v.x, z: v.z }; };
+    const home = HOMES[it.userData.rec.id];
+    if (home) {
+      // walk to the door, pop inside, nap, then come back out of the door
+      p.path = [at(0, home.door), Object.assign(at(0, home.door - 0.4), { enter: true }), at(0, home.door), at(0, home.out)];
+      const first = at(0, home.out); p.tx = first.x; p.tz = first.z;
+    } else {
+      // in one end of the tunnel and out of the other
+      const end = Math.random() < 0.5 ? 1 : -1;
+      it.userData.busy = p.id;
+      p.path = [at(0, end * 1.3), at(0, -end * 1.3), Object.assign(at(0, -end * 2.1), { free: it })];
+      p.path.inTunnel = true;
+      const first = at(0, end * 2.1); p.tx = first.x; p.tz = first.z;
+    }
+    return true;
+  }
+  // Who's inside the hutch or igloo right now (for when she taps it).
+  function whoIsIn(item) {
+    const home = item.localToWorld(new T.Vector3(0, 0, 0));
+    return pigs.filter(p => p.inside > 0 && Math.hypot(p.mesh.position.x - home.x, p.mesh.position.z - home.z) < 2.5).map(p => p.name);
   }
 
   // ---- loop ----
@@ -663,16 +704,39 @@ function buildGarden() {
     });
     pigs.forEach(p => {
       const m = p.mesh;
+      // Inside the hutch or igloo: out of sight for a nap, then back out.
+      if (p.inside > 0) {
+        p.inside -= dt;
+        if (p.inside <= 0) { m.visible = true; p.size = 0.05; p.growing = true; }
+        else return;
+      }
+      if (p.size < 1 && p.growing) { p.size = Math.min(1, p.size + dt * 3); m.scale.setScalar(p.size); if (p.size >= 1) p.growing = false; }
+      if (p.shrinking) {
+        p.size = Math.max(0, p.size - dt * 3.5); m.scale.setScalar(Math.max(0.01, p.size));
+        if (p.size <= 0) { p.shrinking = false; m.visible = false; p.inside = 3 + Math.random() * 5; }
+        return;
+      }
       const dx = p.tx - m.position.x, dz = p.tz - m.position.z, d = Math.hypot(dx, dz);
       let moving = false;
       if (p.wait > 0) p.wait -= dt;
-      else if (d < 0.2) { p.wait = 1 + Math.random() * 3; const a = Math.random() * 6.28, r = Math.random() * (R - 2); p.tx = Math.cos(a) * r; p.tz = Math.sin(a) * r; if (lowG && Math.random() < 0.5) p.hop = 1; }
+      else if (d < 0.2) {
+        const step = p.path && p.path.shift();
+        if (step) {                          // next point of a visit
+          if (step.enter) { p.shrinking = true; p.size = 1; m.position.set(step.x, 0, step.z); }
+          if (step.free) step.free.userData.busy = null;
+          p.tx = step.x; p.tz = step.z;
+        } else if (!pigVisit(p)) {
+          p.wait = 1 + Math.random() * 3; const a = Math.random() * 6.28, r = Math.random() * (R - 2); p.tx = Math.cos(a) * r; p.tz = Math.sin(a) * r;
+          if (lowG && Math.random() < 0.5) p.hop = 1;
+        }
+      }
       else {
         moving = true;
         const want = Math.atan2(dx, dz); let diff = want - m.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
         m.rotation.y += diff * Math.min(1, dt * 6);
         const step = Math.min(d, dt * 1.3); m.position.x += dx / d * step; m.position.z += dz / d * step;
       }
+      if (p.path && p.path.length && p.path.inTunnel) p.hop = 0;
       p.hop = Math.max(0, p.hop - dt * (lowG ? 0.8 : 2.2));
       m.position.y = (moving ? Math.abs(Math.sin(t * 9 + p.id)) * 0.08 : 0) + Math.sin(p.hop * Math.PI) * (lowG ? 2.2 : 0.5);
       m.userData.head.rotation.x = moving ? Math.sin(t * 9) * 0.05 : Math.sin(t * 1.5 + p.id) * 0.08;

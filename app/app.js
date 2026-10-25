@@ -138,7 +138,12 @@ function saveProgress(p) { localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
 
 function renderFarm() {
   const hs = document.getElementById('home-stars');
-  if (hs) hs.textContent = '⭐ ' + starBalance();
+  if (hs) {
+    const n = starBalance();
+    if (hs.dataset.n && +hs.dataset.n < n) { hs.classList.remove('pop'); void hs.offsetWidth; hs.classList.add('pop'); }   // she has just earned some
+    hs.dataset.n = n;
+    hs.textContent = '⭐ ' + n;
+  }
   const progress = loadProgress();
   const grid = document.getElementById('farm-grid');
   grid.innerHTML = '';
@@ -215,6 +220,7 @@ document.querySelectorAll('.game-tile').forEach(btn => {
     if (game === 'garden') startGardenGame();
   });
 });
+document.getElementById('home-stars').addEventListener('click', () => { if (actx.state === 'suspended') actx.resume(); startGardenGame(); });
 document.querySelectorAll('[data-back]').forEach(btn => {
   btn.addEventListener('click', () => { stopGarden(); renderFarm(); showScreen('screen-home'); });
 });

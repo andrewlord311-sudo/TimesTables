@@ -92,20 +92,109 @@ function newWorldMessage() {
 
 function currentWorld() { return WORLDS.find(w => w.id === loadGarden().at) || WORLDS[0]; }
 
+// ---- Music for each world (made in code, Web Audio) ----
+// A gentle tune that never quite repeats: a chord each bar, a bass note, and
+// a melody wandering over that world's scale. Each world has its own tempo
+// and sound. It plays only in the garden worlds, never on the maths screens.
+// The 🔊 button turns it off (remembered in 'ttg_music').
+const WORLD_MUSIC = {
+  // root (MIDI), scale steps, chords (scale degrees), tempo, lead wave, note length, how busy, extras
+  garden: { root: 60, scale: [0, 2, 4, 7, 9], chords: [0, 4, 5, 3], bpm: 96, wave: 'triangle', len: 0.35, busy: 0.55 },
+  beach:  { root: 67, scale: [0, 2, 4, 7, 9], chords: [0, 3, 4, 0], bpm: 112, wave: 'sine', len: 0.18, busy: 0.6, offbeat: true },
+  snow:   { root: 62, scale: [0, 2, 4, 7, 9], chords: [0, 5, 3, 4], bpm: 72, wave: 'sine', len: 1.2, busy: 0.3, bells: true },
+  candy:  { root: 65, scale: [0, 2, 4, 5, 7, 9], chords: [0, 3, 4, 4], bpm: 128, wave: 'square', len: 0.12, busy: 0.65 },
+  moon:   { root: 57, scale: [0, 3, 5, 7, 10], chords: [0, 5, 3, 4], bpm: 60, wave: 'sine', len: 1.6, busy: 0.22, pad: true, echo: true },
+};
+const MAJOR = [0, 2, 4, 5, 7, 9, 11];
+const Music = {
+  on: (() => { try { return localStorage.getItem('ttg_music') !== 'off'; } catch { return true; } })(),
+  style: null, timer: null, step: 0, next: 0, note: 2, out: null,
+  midi: m => 440 * Math.pow(2, (m - 69) / 12),
+  start(world) {
+    this.stop();
+    this.style = WORLD_MUSIC[world] || WORLD_MUSIC.garden;
+    if (!this.on) return;
+    this.out = actx.createGain();
+    this.out.gain.setValueAtTime(0, actx.currentTime);
+    this.out.gain.linearRampToValueAtTime(0.5, actx.currentTime + 1.5);   // fade in
+    if (this.style.echo) {
+      const d = actx.createDelay(); d.delayTime.value = 0.45;
+      const fb = actx.createGain(); fb.gain.value = 0.35;
+      this.out.connect(d); d.connect(fb); fb.connect(d); d.connect(actx.destination);
+    }
+    this.out.connect(actx.destination);
+    this.step = 0; this.next = actx.currentTime + 0.1;
+    this.timer = setInterval(() => this.tick(), 60);
+  },
+  stop() {
+    clearInterval(this.timer); this.timer = null;
+    if (this.out) { const o = this.out; o.gain.cancelScheduledValues(actx.currentTime); o.gain.setValueAtTime(o.gain.value, actx.currentTime); o.gain.linearRampToValueAtTime(0, actx.currentTime + 0.4); setTimeout(() => o.disconnect(), 600); }
+    this.out = null;
+  },
+  toggle(world) {
+    this.on = !this.on;
+    try { localStorage.setItem('ttg_music', this.on ? 'on' : 'off'); } catch {}
+    if (this.on) this.start(world); else this.stop();
+    return this.on;
+  },
+  tone(midi, at, len, vol, wave, attack) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = wave; o.frequency.value = this.midi(midi);
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(vol, at + (attack || 0.01));
+    g.gain.exponentialRampToValueAtTime(0.0005, at + len);
+    o.connect(g); g.connect(this.out);
+    o.start(at); o.stop(at + len + 0.05);
+  },
+  chordTones(deg) { const r = this.style.root; return [0, 2, 4].map(k => r + MAJOR[(deg + k) % 7] + 12 * Math.floor((deg + k) / 7)); },
+  tick() {
+    if (!this.out || actx.state !== 'running') return;
+    const st = this.style, sixteenth = 60 / st.bpm / 4;
+    if (this.next < actx.currentTime - 0.1) this.next = actx.currentTime + 0.05;   // was paused: don't play the backlog
+    while (this.next < actx.currentTime + 0.25) {
+      const at = this.next, s = this.step % 16, bar = Math.floor(this.step / 16);
+      const chord = this.chordTones(st.chords[bar % st.chords.length]);
+      if (s === 0) {
+        this.tone(chord[0] - 24, at, sixteenth * 14, 0.11, 'sine', 0.02);                     // bass
+        if (st.pad) chord.forEach(m => this.tone(m - 12, at, sixteenth * 16, 0.035, 'sine', 1.2));
+      }
+      if (s === 8 && !st.pad) this.tone(chord[0] - 12 + (bar % 2 ? 7 : 0), at, sixteenth * 6, 0.07, 'sine', 0.02);
+      if (st.offbeat && s % 4 === 2) chord.forEach(m => this.tone(m, at, 0.12, 0.025, 'triangle'));   // a strum on the off-beat
+      const strong = s % 4 === 0, half = s % 2 === 0;
+      if ((strong && Math.random() < st.busy + 0.3) || (half && !strong && Math.random() < st.busy * 0.6)) {
+        // wander up or down the scale, landing on a chord note on the beat
+        this.note = Math.max(0, Math.min(9, this.note + [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)]));
+        const sc = st.scale, oct = Math.floor(this.note / sc.length);
+        let m = st.root + 12 + sc[this.note % sc.length] + 12 * oct - 12;
+        if (s === 0) m = chord[Math.floor(Math.random() * 3)];
+        this.tone(m, at, st.len, st.wave === 'square' ? 0.03 : 0.07, st.wave);
+        if (st.bells) this.tone(m + 12, at, st.len * 0.7, 0.025, 'sine');                         // a bell shimmer
+      }
+      this.next += sixteenth; this.step++;
+    }
+  },
+};
+
 function startGardenGame() {
   if (actx.state === 'suspended') actx.resume();
   showScreen('screen-garden');
   renderGardenShop();
-  if (gardenState) { gardenState.running = true; gardenState.enter(); gardenState.loop(); return; }
+  wireMusicButton();
+  if (gardenState) { gardenState.running = true; gardenState.enter(); gardenState.loop(); Music.start(currentWorld().id); return; }
   const msg = document.getElementById('garden-msg');
   msg.textContent = 'Loading the garden…';
   const s = document.createElement('script');
   s.src = THREE_URL;
-  s.onload = () => { msg.textContent = ''; buildGarden(); };
+  s.onload = () => { msg.textContent = ''; buildGarden(); Music.start(currentWorld().id); };
   s.onerror = () => { msg.textContent = 'The garden needs the internet to load the first time.'; };
   document.head.appendChild(s);
 }
-function stopGarden() { if (gardenState) gardenState.running = false; }
+function stopGarden() { if (gardenState) gardenState.running = false; Music.stop(); }
+function wireMusicButton() {
+  const b = document.getElementById('garden-music');
+  b.textContent = Music.on ? '🔊' : '🔇';
+  b.onclick = () => { b.textContent = Music.toggle(currentWorld().id) ? '🔊' : '🔇'; };
+}
 
 function renderGardenShop() {
   document.getElementById('garden-stars').textContent = '⭐ ' + starBalance();
@@ -195,6 +284,8 @@ function buildGarden() {
       case 'hutch': {
         const roof = cone(1.5, 0.8, 0xb03a2e, 0, 1.4, 0, 4); roof.rotation.y = Math.PI / 4; roof.scale.set(1.1, 1, 0.75);
         add(box(2.2, 1.0, 1.4, 0xc58a4a, 0, 0.5, 0), roof, box(0.5, 0.6, 0.05, 0x3b2a1a, 0, 0.35, 0.72), box(0.5, 0.35, 0.05, 0xfff4cf, -0.7, 0.62, 0.72), box(0.12, 0.05, 0.9, 0x8a5a2b, -0.5, 0.02, 1.0));
+        const big = new T.Group(); while (g.children.length) big.add(g.children[0]);
+        big.scale.setScalar(1.6); g.add(big);   // big enough for the guinea pigs to look at home
         break; }
       case 'rainbow':
         ['e03b3b', 'ff9a2e', 'ffd93d', '4cc15a', '3fa0e8', '8a5cd6'].forEach((hex, i) => add(new T.Mesh(new T.TorusGeometry(2.6 - i * 0.22, 0.11, 8, 28, Math.PI), mat(parseInt(hex, 16)))));
@@ -437,6 +528,7 @@ function buildGarden() {
     setTimeout(() => {
       const g = loadGarden(); g.at = w.id; saveGarden(g);
       buildWorld(w); az = 0.6; pol = 1.08; dist = 25;
+      Music.start(w.id);
       fade.classList.remove('on');
       gardenHint(w.id === 'garden' ? 'Home to the garden!' : `Welcome to ${w.name}! ${w.id === 'moon' ? 'The guinea pigs can jump really high here!' : ''}`);
       travelling = false;

@@ -78,6 +78,17 @@ gives the stars back, so nothing is a mistake. The guinea pigs she has
 unlocked on the farm, plus Pip, wander in it; tap one and it squeaks. Drag to
 turn the camera, scroll to zoom.
 
+**Other worlds open as she gets better.** Four more islands float in the sky:
+Beach Island, Snowy Mountain, Candy Land and the Moon. Each opens at a number
+of stages cleared across all her games (`skillScore`: times-tables stages plus
+Column Maths stages, 14 in all): Beach 7, Snowy 9, Candy 11, Moon all 14. A
+locked island is grey, wrapped in cloud, and says how many more stages it
+needs; when one opens, a rainbow bridge grows to it, and the finish screen of
+the game that opened it says so (`newWorldMessage`). Tap an open island to go
+there: each world has its own shop (palm trees and sandcastles, snowmen and
+igloos, lollipops and cakes, rockets and UFOs) and keeps its own things. On the
+Moon the guinea pigs jump very high.
+
 ## The files
 
 Everything is in `app/` — `index.html`, `app.js`, `columns.js`, `garden.js`, `style.css`, and the guinea

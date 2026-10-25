@@ -360,6 +360,7 @@ function finishColumns() {
     if (colStage < COL_STAGES.length) { colStage++; cols.last = colStage; }
     saveCols(cols);
   }
+  document.getElementById('complete-message').textContent += newWorldMessage();
   showScreen('screen-complete');
 }
 

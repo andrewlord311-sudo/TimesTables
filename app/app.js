@@ -853,6 +853,7 @@ function finishSession(game) {
     }
   }
 
+  message.textContent += newWorldMessage();
   showScreen('screen-complete');
 }
 

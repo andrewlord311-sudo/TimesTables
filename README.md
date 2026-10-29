@@ -84,12 +84,41 @@ Stage ids are what is saved (`ttg_columns`), so the block stages are ids 8 and
 9 but appear as stages 4 and 5; the buttons show each stage's position in
 `COL_STAGES`, not its id.
 
+## Colour Mixing
+
+Colour for Clara, simple enough for Felix too (`app/colours.js`). Each round a
+guinea pig wants something painted (a hutch, bow, ball, cushion or tunnel, or
+its own coat), and a card shows the colour. She taps paint pots to drop blobs
+into a bowl, which shows the mix as it goes, then **Paint it!** paints the thing
+so she can hold it against the card. Any mix that looks the same counts (two
+blue and two yellow is the same green as one and one). A miss gets a hint that
+says which way the colour is off ("it needs to be bluer", "yours is a bit too
+dark"), or names a paint the colour doesn't use at all, but never the recipe.
+After three tries "Show me the recipe" fills the bowl. Seven stages, in
+teaching order: two primaries make a secondary; more of one than the other
+(lime, sea green, mango, tomato); lighter and darker with white and black
+(tints and shades); guinea pig coats (brown is all three primaries); warm and
+cool (tap the sunny or snowy side); opposite colours on a colour wheel, shown
+mixed as paint (a muddy brown); and **mixing light**, with red, green and blue
+torches on a dark wall, where red and green make yellow and all three make
+white, next to what the same colours make as paint. 1-3 stars a round (2 or 1
+for warm/cool and the wheel); a stage clears with at most one "show me".
+Progress is in `ttg_colours`.
+
+**The paint really mixes like paint**, not like RGB, which turns blue + yellow
+into grey. Each paint is a reflectance curve across the rainbow, and paints
+mix by Kubelka-Munk (each paint's absorption averaged by amount and tinting
+strength), seen through the CIE colour-matching functions as sRGB. The curves
+were fitted so the mixes look like children's poster paint. One honest limit:
+these five paints can't make a true cream (it comes out lemon or peach), so
+Evie, who is cream, isn't one of the coats.
+
 ## Guinea Pig Garden (the rewards)
 
 `app/garden.js`, a 3D world in Three.js r128 (loaded from cdnjs on first visit,
 no model files: everything is built from shapes). Every game earns **stars**
-(`addStars`, stored in `ttg_rewards`): 5 for finishing Feed, Jigsaw or Run, and
-1-3 per column sum. Stars are spent in the garden on flowers, trees, a hutch,
+(`addStars`, stored in `ttg_rewards`): 5 for finishing Feed, Jigsaw or Run,
+1-3 per column sum, and 1-3 per Colour Mixing round. Stars are spent in the garden on flowers, trees, a hutch,
 pond, rainbow and more (`GARDEN_ITEMS`, saved in `ttg_garden`). "Tidy up"
 gives the stars back, so nothing is a mistake. The guinea pigs she has
 unlocked on the farm, plus Pip, wander in it; tap one and it squeaks. Drag to
@@ -119,7 +148,7 @@ sits top right of the home screen, and tapping it opens the garden.
 
 ## The files
 
-Everything is in `app/` — `index.html`, `app.js`, `columns.js`, `garden.js`, `style.css`, and the guinea
+Everything is in `app/` — `index.html`, `app.js`, `columns.js`, `colours.js`, `garden.js`, `style.css`, and the guinea
 pig SVGs with their idle, happy and sad animations.
 
 `app.js` is a single file and is the source of truth for the stage progression

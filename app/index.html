@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Pip's Times Tables</title>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 
@@ -42,6 +42,10 @@
     <button class="game-tile" data-game="columns">
       <span class="tile-emoji">➕</span>
       <span>Column<br>Maths</span>
+    </button>
+    <button class="game-tile" data-game="colours">
+      <span class="tile-emoji">🎨</span>
+      <span>Colour<br>Mixing</span>
     </button>
     <button class="game-tile" data-game="garden">
       <span class="tile-emoji">🌳</span>
@@ -131,6 +135,18 @@
   <button class="big-btn hidden" id="columns-next">Next sum</button>
 </section>
 
+<!-- COLOUR MIXING: paint and light with the guinea pigs (see colours.js) -->
+<section id="screen-colours" class="screen">
+  <button class="back-btn" data-back>←</button>
+  <div class="stage-row" id="colours-stages"></div>
+  <p class="stage-caption" id="colours-stages-caption"></p>
+  <div class="progress-dots" id="colours-dots"></div>
+  <div class="pt-play" id="pt-play"></div>
+  <p class="pt-msg" id="pt-msg"></p>
+  <button class="stuck-btn hidden" id="pt-show">Show me the recipe</button>
+  <div class="pt-actions" id="pt-actions"></div>
+</section>
+
 <!-- GUINEA PIG GARDEN: the 3D reward world, spent with stars (see garden.js) -->
 <section id="screen-garden" class="screen">
   <button class="back-btn" data-back>←</button>
@@ -161,7 +177,8 @@
 </section>
 
 <script src="columns.js?v=14"></script>
+<script src="colours.js?v=1"></script>
 <script src="garden.js?v=13"></script>
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

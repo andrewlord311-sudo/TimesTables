@@ -5,15 +5,24 @@
 // look at without giving the digit. Loaded BEFORE app.js (deep links) and uses
 // its helpers (showScreen, chimes, renderFarm) only when called.
 
+// Listed in teaching order. The ids are what is saved (cleared stages, last
+// stage), so new stages get new ids rather than renumbering: 8 and 9 are the
+// block stages that come before written subtraction, as at school (NCETM 1.21:
+// Dienes alongside the column layout first, then the layout alone).
+// Clara sees each stage's position in this list, not its id.
 const COL_STAGES = [
   { id: 1, op: '+', digits: 3, exchanges: [0],    label: 'Adding, no carrying' },
   { id: 2, op: '+', digits: 3, exchanges: [1],    label: 'Adding, carry once' },
   { id: 3, op: '+', digits: 3, exchanges: [2],    label: 'Adding, carry twice' },
-  { id: 4, op: '-', digits: 3, exchanges: [0],    label: 'Taking away, no exchange' },
-  { id: 5, op: '-', digits: 3, exchanges: [1],    label: 'Taking away, exchange once' },
-  { id: 6, op: '-', digits: 3, exchanges: [2],    label: 'Taking away, exchange twice' },
+  { id: 8, op: '-', digits: 2, exchanges: [0],    label: 'Subtracting with blocks', blocks: true },
+  { id: 9, op: '-', digits: 3, exchanges: [1],    label: 'Swap with blocks: exchanging', blocks: true },
+  { id: 4, op: '-', digits: 3, exchanges: [0],    label: 'Subtracting, no exchange' },
+  { id: 5, op: '-', digits: 3, exchanges: [1],    label: 'Subtracting, exchange once' },
+  { id: 6, op: '-', digits: 3, exchanges: [2],    label: 'Subtracting, exchange twice' },
   { id: 7, op: '+-', digits: 4, exchanges: [0, 1, 2, 3], label: 'Thousands too!' },
 ];
+const colStageIndex = id => Math.max(0, COL_STAGES.findIndex(s => s.id === id));
+const colStageDef = id => COL_STAGES[colStageIndex(id)];
 const COL_SUMS_PER_SESSION = 5;
 const COL_KEY = 'ttg_columns';
 const REWARDS_KEY = 'ttg_rewards';       // shared "stars" to spend in the garden
@@ -101,6 +110,7 @@ function makeColumnSum(stage) {
 let colStage = loadCols().last;
 let colSumNo = 0, colSolved = 0, colStars = 0, colSum = null;
 let colVals = {}, colSel = null, colChecks = 0, colDone = false, colMessy = 0;
+let colMat = null;   // the blocks in a block stage: how many in each column, how many subtracted, which columns have swapped
 
 function startColumnsGame() {
   if (actx.state === 'suspended') actx.resume();
@@ -114,10 +124,10 @@ function renderColStages() {
   const row = document.getElementById('columns-stages');
   const cleared = loadCols().cleared;
   row.innerHTML = '';
-  COL_STAGES.forEach(s => {
+  COL_STAGES.forEach((s, i) => {
     const b = document.createElement('button');
     b.className = 'stage-btn' + (s.id === colStage ? ' active' : '') + (cleared.includes(s.id) ? ' cleared' : '');
-    b.innerHTML = `<span class="stage-num">${s.id}</span>${cleared.includes(s.id) ? '<span class="tick">✓</span>' : ''}`;
+    b.innerHTML = `<span class="stage-num">${i + 1}</span>${cleared.includes(s.id) ? '<span class="tick">✓</span>' : ''}`;
     b.addEventListener('click', () => {
       colStage = s.id;
       const c = loadCols(); c.last = s.id; saveCols(c);
@@ -126,17 +136,22 @@ function renderColStages() {
     row.appendChild(b);
   });
   document.getElementById('columns-stages-caption').textContent =
-    `Stage ${colStage}: ${COL_STAGES[colStage - 1].label}`;
+    `Stage ${colStageIndex(colStage) + 1}: ${colStageDef(colStage).label}`;
 }
 
 function nextColumnSum() {
   if (colSumNo >= COL_SUMS_PER_SESSION) return finishColumns();
-  colSum = makeColumnSum(COL_STAGES[colStage - 1]);
+  const stage = colStageDef(colStage);
+  colSum = makeColumnSum(stage);
+  colSum.blocks = !!stage.blocks && colSum.op === '-';
   colVals = {}; colSel = null; colChecks = 0; colDone = false;
+  colMat = colSum.blocks ? { have: colSum.top.slice(), taken: colSum.top.map(() => 0), swapped: {}, arriving: -1 } : null;
   colSumNo++;
   renderColDots();
   renderColSum();
-  setColMsg(colSum.op === '+' ? 'Add the numbers. Start with the ones!' : 'Take away. Start with the ones!');
+  setColMsg(colSum.op === '+' ? 'Add the numbers. Start with the ones!'
+    : colSum.blocks ? 'The blocks show the top number. Start with the ones: tap the ones blocks to subtract.'
+    : 'Subtract. Start with the ones!');
   document.getElementById('columns-next').classList.add('hidden');
   document.getElementById('columns-check').classList.remove('hidden');
   document.getElementById('columns-keys').classList.remove('hidden');
@@ -172,8 +187,17 @@ function renderColSum() {
   const box = document.getElementById('columns-sum');
   box.innerHTML = '';
   box.style.gridTemplateColumns = `44px repeat(${n}, 78px)`;
-  const put = (el, row, col) => { el.style.gridRow = row; el.style.gridColumn = col; box.appendChild(el); };
+  const off = s.blocks ? 1 : 0;                      // the blocks take the top row in a block stage
+  const put = (el, row, col) => { el.style.gridRow = row + off; el.style.gridColumn = col; box.appendChild(el); };
   const colOf = c => n - c + 1;                      // grid column for digit column c (units on the right)
+  if (s.blocks) {
+    for (let c = n - 1; c >= 0; c--) {
+      const m = document.createElement('div'); m.className = 'cmat'; m.id = 'cmat' + c;
+      m.style.gridRow = 1; m.style.gridColumn = colOf(c);
+      box.appendChild(m);
+    }
+    renderColMat();
+  }
   const rowHead = 1;
   for (let c = n - 1; c >= 0; c--) {
     const h = document.createElement('div'); h.className = 'chead ' + 'h' + c; h.textContent = COL_HEAD[c];
@@ -228,6 +252,92 @@ function refreshCells(wrong) {
       if (d) d.classList.toggle('struck', colVals['ex' + c] !== undefined);
     }
   }
+}
+
+// ---- Blocks (block stages only) ----
+// Dienes-style blocks above each column: only the top number is built, as at
+// school. Tapping a column subtracts one block; subtracted blocks stay, faded,
+// so the bottom number is still visible. "Swap" breaks one block into ten of
+// the next column down, and writes the exchange into the sum at the same
+// moment, so she sees the crossed-out digit and the little 1 come from the
+// swap. It refuses a swap the column next door doesn't need.
+const COL_UNIT = ['one', 'ten', 'hundred', 'thousand'];
+const BLOCK_KIND = ['one', 'ten', 'hun', 'hun'];
+const unitWord = (c, k) => k === 1 ? COL_UNIT[c] : COL_NAMES[c];
+
+function renderColMat() {
+  if (!colMat) return;
+  const s = colSum;
+  for (let c = 0; c < s.n; c++) {
+    const m = document.getElementById('cmat' + c);
+    if (!m) continue;
+    m.innerHTML = '';
+    const have = colMat.have[c], taken = colMat.taken[c];
+    if (c >= 1 && !colMat.swapped[c] && have - taken >= 1 && !colDone) {
+      const sw = document.createElement('button');
+      sw.className = 'cswap';
+      sw.textContent = 'Swap ➜';
+      sw.setAttribute('aria-label', `Swap 1 ${COL_UNIT[c]} for 10 ${COL_NAMES[c - 1]}`);
+      sw.addEventListener('click', () => swapBlock(c));
+      m.appendChild(sw);
+    }
+    const pile = document.createElement('button');
+    pile.className = 'cpile ' + BLOCK_KIND[c];
+    pile.setAttribute('aria-label', `${have - taken} ${unitWord(c, have - taken)} left. Tap to subtract one.`);
+    for (let i = 0; i < have; i++) {
+      const b = document.createElement('span');
+      b.className = 'blk ' + BLOCK_KIND[c] + (i >= have - taken ? ' gone' : '');
+      if (colMat.arriving === c && i >= have - 10) { b.classList.add('arrive'); b.style.animationDelay = (i - (have - 10)) * 40 + 'ms'; }
+      pile.appendChild(b);
+    }
+    pile.addEventListener('click', () => takeBlock(c));
+    m.appendChild(pile);
+  }
+  colMat.arriving = -1;
+}
+
+function takeBlock(c) {
+  if (colDone || !colMat) return;
+  const s = colSum, want = s.bot[c], have = colMat.have[c];
+  const name = COL_NAMES[c];
+  if (colMat.taken[c] >= want) {
+    setColMsg(want === 0
+      ? `There are no ${name} to subtract in this column. Leave them all!`
+      : `You've subtracted ${want} ${unitWord(c, want)} already. How many ${name} are left?`);
+    return;
+  }
+  if (have - colMat.taken[c] <= 0) {
+    setColMsg(`There aren't enough ${name} to subtract ${want}. Swap 1 ${COL_UNIT[c + 1]} for 10 ${name}: tap Swap above the ${COL_NAMES[c + 1]}.`, 'warn');
+    return;
+  }
+  colMat.taken[c]++;
+  playGentleBlip();
+  renderColMat();
+  if (colMat.taken[c] === want)
+    setColMsg(`${have} ${unitWord(c, have)} minus ${want} ${unitWord(c, want)} is equal to … how many ${name}? Count what's left and write it in the answer.`);
+  else
+    setColMsg(`Subtracting ${want} ${unitWord(c, want)}: ${colMat.taken[c]} done.`);
+}
+
+function swapBlock(c) {
+  if (colDone || !colMat) return;
+  const s = colSum, lo = c - 1;
+  const loName = COL_NAMES[lo];
+  if (colMat.have[lo] >= s.bot[lo]) {
+    setColMsg(`The ${loName} have enough already: ${colMat.have[lo]} ${unitWord(lo, colMat.have[lo])} minus ${s.bot[lo]} ${unitWord(lo, s.bot[lo])}. No swap needed!`, 'warn');
+    return;
+  }
+  colMat.have[c]--;
+  colMat.have[lo] += 10;
+  colMat.swapped[c] = true;
+  colMat.arriving = lo;
+  colVals['ex' + c] = String(s.top[c] - 1);
+  colVals['add' + lo] = '1';
+  playGentleBlip();
+  refreshCells();
+  renderColMat();
+  setColMsg(`You swapped 1 ${COL_UNIT[c]} for 10 ${loName}. Now there are ${colMat.have[lo]} ${loName}! ` +
+    `In the sum, the ${s.top[c]} ${unitWord(c, s.top[c])} became ${s.top[c] - 1}, and the little 1 turns ${s.top[lo]} ${unitWord(lo, s.top[lo])} into ${colMat.have[lo]}.`);
 }
 
 function selectCell(key) {
@@ -300,11 +410,11 @@ function checkColumnSum() {
     const t = s.top[col], b = s.bot[col];
     msg = s.op === '+'
       ? `Look at the ${COL_NAMES[col]}: ${t} + ${b}${col > 0 && s.need['car' + col] ? ' + the 1 you carried' : ''}. Is it 10 or more? Only the ones part goes in the answer.`
-      : `Look at the ${COL_NAMES[col]}: ${t} take away ${b}. Can you do it? If not, you need to exchange.`;
+      : `Look at the ${COL_NAMES[col]}: ${t} ${unitWord(col, t)} minus ${b} ${unitWord(col, b)}. Are there enough ${COL_NAMES[col]}? If not, exchange from the ${COL_NAMES[col + 1] || 'next column'}.`;
   } else if (first.startsWith('car')) {
     msg = `Check the carry into the ${COL_NAMES[col]}. Was the sum in the ${COL_NAMES[col - 1]} column 10 or more? Only carry a 1 if it was.`;
   } else if (first.startsWith('ex')) {
-    msg = `Check the ${COL_NAMES[col]}: when you exchange, one of them is taken away. What is left?`;
+    msg = `Check the ${COL_NAMES[col]}: when you exchange, 1 ${COL_UNIT[col]} moves to the next column. How many are left?`;
   } else {
     msg = `Check the ${COL_NAMES[col]}: an exchange gives that column an extra 10. Only write a 1 where it is needed.`;
   }
@@ -334,6 +444,7 @@ function columnSolved() {
   addStars(stars);
   document.getElementById('columns-show').classList.add('hidden');
   refreshCells();
+  renderColMat();
   playSuccessChime();
   const s = colSum;
   setColMsg(`Yes! ${s.topVal} ${s.op === '+' ? '+' : '−'} ${s.botVal} = ${s.ansVal}  ${'⭐'.repeat(stars)}`, 'ok');
@@ -353,11 +464,12 @@ function finishColumns() {
   document.getElementById('complete-title').textContent = `${colSolved} sums done!`;
   document.getElementById('complete-message').textContent =
     `You earned ${colStars} star${colStars === 1 ? '' : 's'} for the garden.` +
-    (good && !cols.cleared.includes(colStage) ? ` Stage ${colStage} cleared!` : '');
+    (good && !cols.cleared.includes(colStage) ? ` Stage ${colStageIndex(colStage) + 1} cleared!` : '');
   document.getElementById('new-pig-reveal').classList.add('hidden');
   if (good && !cols.cleared.includes(colStage)) {
     cols.cleared.push(colStage);
-    if (colStage < COL_STAGES.length) { colStage++; cols.last = colStage; }
+    const i = colStageIndex(colStage);
+    if (i < COL_STAGES.length - 1) { colStage = COL_STAGES[i + 1].id; cols.last = colStage; }
     saveCols(cols);
   }
   document.getElementById('complete-message').textContent += newWorldMessage();

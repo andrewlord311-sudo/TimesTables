@@ -56,16 +56,33 @@ give the game away. Best and recent times appear only under "For grown-ups".
 ## Column Maths
 
 Year 3 column addition and subtraction (`app/columns.js`). The sum is laid out
-in columns (H T O, and Th at stage 7). Clara taps a space, types a digit, and
+in columns (H T O, and Th in the last stage). Clara taps a space, types a digit, and
 fills in the answer **and** the carry (addition: little boxes under the answer)
 or the exchange (subtraction: a box above the top digit for what is left, and a
 tiny box beside the digit for the extra 1 ten). **Check** marks each space;
 the hint names the column to look at but never gives the digit, and after
-three checks "Show me one step" fills one space. Seven stages: add with no
-carry, one carry, two carries; subtract with no exchange, one, two; then
-4-digit sums. 5 sums a session, 1-3 stars each (fewer checks, more stars).
-A stage clears with 4 of 5 done and at most one "show me". The generator never
-makes a zero in the middle that needs a chain exchange (not Year 3).
+three checks "Show me one step" fills one space. Nine stages, in teaching
+order: add with no carry, one carry, two carries; **subtract with blocks**,
+**swap with blocks**; subtract with no exchange, one, two; then 4-digit sums.
+5 sums a session, 1-3 stars each (fewer checks, more stars). A stage clears
+with 4 of 5 done and at most one "show me". The generator never makes a zero
+in the middle that needs a chain exchange (still to add: NCETM teaches 404 − 257
+in Year 3).
+
+**Subtraction follows the school sequence** (NCETM 1.21, researched in
+`docs/column-subtraction-research.md`): blocks first, then the written method
+alone. In the two block stages, Dienes-style blocks sit above each column and
+show only the top number, as at school. Tapping a column subtracts one block,
+and subtracted blocks stay faded so the bottom number is still visible. **Swap**
+breaks one ten (or hundred) into ten of the next column down, and writes the
+exchange into the sum at the same moment: the crossed-out digit and the little
+1 appear as the blocks slide across. A swap the next column doesn't need is
+refused with the reason ("the ones have enough already"). The wording is
+"subtract" and "minus", not "take away", as schools use.
+
+Stage ids are what is saved (`ttg_columns`), so the block stages are ids 8 and
+9 but appear as stages 4 and 5; the buttons show each stage's position in
+`COL_STAGES`, not its id.
 
 ## Guinea Pig Garden (the rewards)
 
@@ -81,7 +98,7 @@ turn the camera, scroll to zoom.
 **Other worlds open as she gets better.** Four more islands float in the sky:
 Beach Island, Snowy Mountain, Candy Land and the Moon. Each opens at a number
 of stages cleared across all her games (`skillScore`: times-tables stages plus
-Column Maths stages, 14 in all): Beach 7, Snowy 9, Candy 11, Moon all 14. A
+Column Maths stages, 16 in all): Beach 7, Snowy 9, Candy 11, Moon 14. A
 locked island is grey, wrapped in cloud, and says how many more stages it
 needs; when one opens, a rainbow bridge grows to it, and the finish screen of
 the game that opened it says so (`newWorldMessage`). Tap an open island to go

@@ -217,7 +217,6 @@ document.querySelectorAll('.game-tile').forEach(btn => {
     if (game === 'jigsaw') startJigsawGame();
     if (game === 'run') startRunGame();
     if (game === 'columns') startColumnsGame();
-    if (game === 'colours') startColoursGame();
     if (game === 'garden') startGardenGame();
   });
 });
@@ -232,7 +231,6 @@ document.getElementById('play-again-btn').addEventListener('click', () => {
   if (lastCompletedGame === 'feed') startFeedGame();
   else if (lastCompletedGame === 'run') startRunGame();
   else if (lastCompletedGame === 'columns') startColumnsGame();
-  else if (lastCompletedGame === 'colours') startColoursGame();
   else startJigsawGame();
 });
 
@@ -939,7 +937,7 @@ document.getElementById('grownups-btn').addEventListener('click', () => {
 // reachable directly: ?game=feed | jigsaw | run. Anything else, or no
 // parameter at all, opens the home screen exactly as before -- and the back
 // and Home buttons still work, so arriving by deep link is never a dead end.
-const DEEP_LINKS = { feed: startFeedGame, jigsaw: startJigsawGame, run: startRunGame, columns: startColumnsGame, colours: startColoursGame, garden: startGardenGame };
+const DEEP_LINKS = { feed: startFeedGame, jigsaw: startJigsawGame, run: startRunGame, columns: startColumnsGame, garden: startGardenGame };
 
 // Arriving by deep link means no game tile was ever tapped, and tapping a
 // tile is what used to resume the AudioContext (browsers refuse to start

@@ -72,7 +72,7 @@ function starBalance() {
   return earned - loadGarden().spent;
 }
 
-// How good she has got: stages cleared across all her games (14 in all).
+// How good she has got: stages cleared across all her games (16 in all).
 function skillScore() {
   const tables = new Set(loadProgress().clearedStages || []).size;
   const cols = new Set(loadCols().cleared || []).size;

@@ -580,10 +580,9 @@ function handleFeedAnswer(n, btn) {
 // To swap or add pictures: drop the file in images/ and update the entry
 // for that stage number below.
 const JIGSAW_IMAGES = {
-  // Stage 1 is a real photo of Maya and Evie (6.9.26), deliberately first
-  // rather than saved for stage 7 -- it is the hook, and it should be the
-  // thing she uncovers on day one. One line to move it later if that's wrong.
-  1: { file: 'images/maya-and-evie.jpg', name: 'you and Evie!', portrait: true },
+  // Stage 1 is deliberately first rather than saved for stage 7 -- it is the
+  // hook, and it should be the thing she uncovers on day one.
+  1: { file: 'images/images.jpg', name: 'a guinea pig' },
   2: { file: 'images/images-2.jpg', name: 'a white guinea pig' },
   3: { file: 'images/images-1.jpg', name: 'a guinea pig in the grass' },
   4: { file: 'images/images-4.jpg', name: 'a fluffy long-haired guinea pig' },

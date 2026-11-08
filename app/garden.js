@@ -63,6 +63,7 @@ function loadGarden() {
   g.at = g.at || 'garden';
   g.opened = g.opened || ['garden'];   // bridges already built (and celebrated)
   g.told = g.told || ['garden'];       // new worlds already announced on a finish screen
+  g.pigWorld = g.pigWorld || {};       // which world each guinea pig is in (id -> world id); missing = the garden
   return g;
 }
 function saveGarden(g) { try { localStorage.setItem(GARDEN_KEY, JSON.stringify(g)); } catch {} }
@@ -79,6 +80,7 @@ function skillScore() {
   return tables + cols;
 }
 function worldOpen(w) { return skillScore() >= w.need; }
+const WORLD_EMOJI = { garden: '🌳', beach: '🏝️', snow: '⛰️', candy: '🍭', moon: '🌙' };
 
 // For the finish screens: a sentence if a world has just opened, else ''.
 function newWorldMessage() {
@@ -448,8 +450,10 @@ function buildGarden() {
     (G.worlds[w.id] || []).forEach(addItem);
     buildIslands();
     pigs.forEach(p => { const a = rand() * 6.28, d = 2 + rand() * 4; p.mesh.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); p.tx = p.mesh.position.x; p.tz = p.mesh.position.z;
-      p.path = null; p.inside = 0; p.shrinking = p.growing = false; p.size = 1; p.mesh.visible = true; p.mesh.scale.setScalar(1); });
-    renderGardenShop();
+      p.path = null; p.inside = 0; p.cross = null; p.shrinking = p.growing = false; p.size = 1; p.mesh.rotation.x = 0; p.mesh.scale.setScalar(1);
+      p.here = pigWorldOf(p.id) === w.id; p.mesh.visible = p.here; });
+    crossTimer = 4;
+    renderGardenShop(); renderWorldBar();
   }
   function addItem(rec) {
     const m = makeItem(rec.id); m.position.set(rec.x, 0, rec.z); m.rotation.y = rec.rot || 0;
@@ -514,7 +518,7 @@ function buildGarden() {
       if (grow) geo.setDrawRange(0, 0);
       g.add(new T.Mesh(geo, mat(parseInt(hex, 16), { flatShading: false })));
     });
-    g.userData.grow = grow ? 0 : 1;
+    g.userData.grow = grow ? 0 : 1; g.userData.curve = curve;
     worldRoot.add(g);
     return g;
   }
@@ -528,12 +532,93 @@ function buildGarden() {
     fade.classList.add('on'); playSuccessChime();
     setTimeout(() => {
       const g = loadGarden(); g.at = w.id; saveGarden(g);
+      let friend = null;                                  // an empty world is lonely: one pig comes along
+      if (!pigs.some(p => pigWorldOf(p.id) === w.id)) { const here = pigs.filter(p => p.here); friend = here[Math.floor(Math.random() * here.length)]; if (friend) movePig(friend, w.id); }
       buildWorld(w); az = 0.6; pol = 1.08; dist = 25;
       Music.start(w.id);
       fade.classList.remove('on');
-      gardenHint(w.id === 'garden' ? 'Home to the garden!' : `Welcome to ${w.name}! ${w.id === 'moon' ? 'The guinea pigs can jump really high here!' : ''}`);
+      gardenHint((w.id === 'garden' ? 'Home to the garden!' : `Welcome to ${w.name}! ${w.id === 'moon' ? 'The guinea pigs can jump really high here!' : ''}`) + (friend ? ` ${friend.name} came along!` : ''));
       travelling = false;
     }, 600);
+  }
+
+  // ---- which world each guinea pig is in ----
+  const pigWorldOf = id => (loadGarden().pigWorld[id]) || 'garden';
+  function movePig(p, worldId) { const g = loadGarden(); g.pigWorld[p.id] = worldId; saveGarden(g); renderWorldBar(); }
+  const pigsIn = id => pigs.filter(p => pigWorldOf(p.id) === id).length;
+
+  // ---- the world switcher bar: one button per world ----
+  function renderWorldBar() {
+    const bar = document.getElementById('garden-worlds'); if (!bar) return;
+    const score = skillScore();
+    bar.innerHTML = '';
+    WORLDS.forEach(w => {
+      const open = score >= w.need, here = w.id === world.id;
+      const b = document.createElement('button');
+      b.className = 'world-btn' + (here ? ' here' : '') + (open ? '' : ' locked');
+      const n = open ? pigsIn(w.id) : 0;
+      b.innerHTML = `<span class="wb-e">${open ? WORLD_EMOJI[w.id] : '🔒'}</span><span class="wb-n">${w.name.replace(/^the /, 'The ')}</span>` + (open && n ? `<span class="wb-pigs">🐹${n}</span>` : '');
+      b.setAttribute('aria-label', open ? `${w.name}${here ? ' (you are here)' : ''}, ${n} guinea pig${n === 1 ? '' : 's'}` : `${w.name}, locked`);
+      b.addEventListener('click', () => {
+        if (travelling) return;
+        if (here) { playGentleBlip(); gardenHint(`You're in ${w.name} already!`); return; }
+        if (!open) { playGentleBlip(); const need = w.need - score; gardenHint(`🔒 ${w.name.replace(/^the /, 'The ')} opens when you clear ${need} more stage${need === 1 ? '' : 's'}. Try Column Maths or Feed Pip!`); return; }
+        travel(w);
+      });
+      bar.appendChild(b);
+    });
+  }
+
+  // ---- guinea pigs crossing the rainbow bridges ----
+  // Every so often a pig from this world walks to the foot of a bridge, climbs the
+  // rainbow and hops over to that island (it now lives there); and a pig from
+  // another world can come down a bridge into this one. Where each pig lives is
+  // saved, so the pigs she finds in each world are the ones who crossed.
+  let crossTimer = 4;
+  const openBridges = () => islands.filter(i => i.userData.open && i.userData.bridge && i.userData.bridge.userData.grow >= 1 && i.userData.bridge.userData.curve);
+  function startCrossing(dt) {
+    crossTimer -= dt; if (crossTimer > 0 || travelling) return;
+    crossTimer = 7 + Math.random() * 8;
+    const br = openBridges(); if (!br.length) return;
+    const isl = br[Math.floor(Math.random() * br.length)], curve = isl.userData.bridge.userData.curve, w = isl.userData.world;
+    const busy = p => p.cross || p.shrinking || p.inside > 0 || (p.path && p.path.length) || p.size < 1;
+    const arrivals = pigs.filter(p => !p.here && pigWorldOf(p.id) === w.id);
+    if (arrivals.length && Math.random() < 0.55) {        // someone comes over the rainbow to us
+      const p = arrivals[Math.floor(Math.random() * arrivals.length)];
+      movePig(p, world.id); p.here = true; p.path = null; p.inside = 0; p.wait = 0; p.size = 1;
+      p.mesh.visible = true; p.mesh.scale.setScalar(1);
+      p.cross = { curve, len: curve.getLength(), t: 1, dir: -1 };
+      if (!gardenSel && !drag) gardenHint(`${p.name} is coming over the rainbow from ${w.name}! 🌈`);
+      return;
+    }
+    const going = pigs.filter(p => p.here && !busy(p) && p.wait <= 0.5);
+    if (!going.length) return;
+    const p = going[Math.floor(Math.random() * going.length)];
+    const foot = curve.v0;                               // the foot of the bridge on the ground
+    p.path = [{ x: foot.x, z: foot.z, bridge: { curve, len: curve.getLength(), island: w } }];
+    p.tx = foot.x; p.tz = foot.z; p.wait = 0;
+  }
+  // Moves a crossing pig along the rainbow. Returns true while it is still on it.
+  function stepCrossing(p, dt) {
+    const c = p.cross, m = p.mesh;
+    c.t += c.dir * dt * 1.6 / c.len;
+    const t = Math.min(1, Math.max(0, c.t));
+    const pt = c.curve.getPoint(t), tan = c.curve.getTangent(t);
+    m.position.set(pt.x, pt.y + 0.12, pt.z);
+    m.rotation.y = Math.atan2(c.dir * tan.x, c.dir * tan.z);
+    m.rotation.x = -Math.asin(Math.max(-1, Math.min(1, c.dir * tan.y)));
+    m.userData.head.rotation.x = Math.sin(t * 90) * 0.05;
+    if (c.dir > 0 && c.t >= 1) {                         // arrived on the island: it lives there now
+      movePig(p, c.island.id); p.here = false; m.visible = false; m.rotation.x = 0; p.cross = null;
+      playTone(1250, actx.currentTime, 0.1, 0.12); playTone(1650, actx.currentTime + 0.1, 0.12, 0.12);
+      if (!gardenSel) gardenHint(`${p.name} crossed the rainbow to ${c.island.name}! 🌈`);
+      return false;
+    }
+    if (c.dir < 0 && c.t <= 0) {                         // back on the ground here
+      m.rotation.x = 0; m.position.y = 0; p.cross = null; p.tx = pt.x * 0.85; p.tz = pt.z * 0.85; p.wait = 0.5;
+      return false;
+    }
+    return true;
   }
 
   // ---- guinea pigs ----
@@ -548,6 +633,7 @@ function buildGarden() {
       sphere(0.13, 0xe9a1a8, 0.3, 0.22, -0.05, 0.4, 1, 1), sphere(0.13, 0xe9a1a8, -0.3, 0.22, -0.05, 0.4, 1, 1));
     g.add(head);
     [[0.25, 0.4], [-0.25, 0.4], [0.25, -0.4], [-0.25, -0.4]].forEach(([x, z]) => g.add(sphere(0.1, patchC, x, 0.08, z, 1, 0.7, 1.3)));
+    g.rotation.order = 'YXZ';   // turn first, then tilt: nose up when climbing a rainbow
     g.userData = { head };
     return cast(g);
   }
@@ -559,7 +645,7 @@ function buildGarden() {
       const a = rand() * 6.28, d = 2 + rand() * 4;
       mesh.position.set(Math.cos(a) * d, 0, Math.sin(a) * d);
       const name = id === 0 ? 'Pip' : (FARM_PIGS.find(f => f.id === id) || {}).name;
-      pigs.push({ id, name, mesh, tx: mesh.position.x, tz: mesh.position.z, wait: rand() * 2, hop: 0, size: 1 });
+      pigs.push({ id, name, mesh, here: true, tx: mesh.position.x, tz: mesh.position.z, wait: rand() * 2, hop: 0, size: 1 });
     });
   }
 
@@ -702,8 +788,11 @@ function buildGarden() {
       if (m.userData.grow !== undefined) { m.userData.grow = Math.min(1, m.userData.grow + dt * 3); const s = 1 + Math.sin(m.userData.grow * Math.PI) * 0.15; m.scale.setScalar(Math.max(0.05, m.userData.grow * s)); if (m.userData.grow >= 1) { m.scale.setScalar(1); delete m.userData.grow; } }
       m.traverse(o => { if (o.userData.spin) o.rotation.y += dt * 1.2; if (o.userData.hover) { o.position.y = 1.6 + Math.sin(t * 2) * 0.15; o.rotation.y += dt * 0.8; } if (o.userData.waddle) o.rotation.z = Math.sin(t * 4) * 0.08; });
     });
+    startCrossing(dt);
     pigs.forEach(p => {
       const m = p.mesh;
+      if (!p.here) return;                       // living in another world
+      if (p.cross) { if (stepCrossing(p, dt) || !p.here) return; }
       // Inside the hutch or igloo: out of sight for a nap, then back out.
       if (p.inside > 0) {
         p.inside -= dt;
@@ -722,6 +811,7 @@ function buildGarden() {
       else if (d < 0.2) {
         const step = p.path && p.path.shift();
         if (step) {                          // next point of a visit
+          if (step.bridge) { p.cross = { curve: step.bridge.curve, len: step.bridge.len, island: step.bridge.island, t: 0, dir: 1 }; return; }
           if (step.enter) { p.shrinking = true; p.size = 1; m.position.set(step.x, 0, step.z); }
           if (step.free) step.free.userData.busy = null;
           p.tx = step.x; p.tz = step.z;

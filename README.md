@@ -127,6 +127,17 @@ chord a bar, a bass note and a wandering tune in that world's scale and tempo
 the garden, never during the maths; the 🔊 button turns it off. Her star total
 sits top right of the home screen, and tapping it opens the garden.
 
+**Switching worlds and crossing rainbows.** A bar under the garden has one
+button per world (🌳 🏝️ ⛰️ 🍭 🌙) with how many guinea pigs live there; tap one
+to travel, or a locked one to see how many stages it needs. Tapping an island in
+the sky still works. Every pig lives in one world (saved in `ttg_garden` as
+`pigWorld`, id → world; missing means the garden). Every few seconds a pig walks to
+the foot of a rainbow bridge, climbs it and hops over to that island, where it
+now lives; and pigs from other worlds come down the bridges into the one she is in. The
+messages say who is crossing. A world with no pigs gets one when she
+travels there ("Pip came along!"), so no world is empty. Only open worlds have
+bridges, so pigs can't reach a locked one.
+
 ## The files
 
 Everything is in `app/` — `index.html`, `app.js`, `columns.js`, `garden.js`, `style.css`, and the guinea

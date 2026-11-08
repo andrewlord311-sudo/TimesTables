@@ -374,3 +374,13 @@ h1 { font-size: 38px; margin: 10px 0 4px; text-align: center; }
 @keyframes blkArrive { from { transform: translate(-40px, -10px) scale(0.3); opacity: 0; } to { transform: none; opacity: 1; } }
 .cswap { font: inherit; font-size: 13px; font-weight: bold; padding: 3px 8px; border-radius: 10px; border: 2px solid #a06cd5; background: #f3eafc; color: #6b3fa0; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .blk.arrive { animation: none; } }
+
+/* Garden world switcher: one button per world, with how many guinea pigs live there */
+.garden-worlds { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; padding: 8px 10px 2px; width: 100vw; }
+.world-btn { font-family: inherit; display: flex; align-items: center; gap: 5px; border: 3px solid transparent; border-radius: 18px; background: white; padding: 4px 10px 4px 8px; box-shadow: 0 3px 0 rgba(0,0,0,0.1); cursor: pointer; font-size: 13px; font-weight: bold; color: #4a3a22; }
+.world-btn .wb-e { font-size: 22px; line-height: 1; }
+.world-btn .wb-pigs { font-size: 12px; color: #8a6d00; }
+.world-btn.here { border-color: #4a9bd8; background: #e8f4fd; }
+.world-btn.locked { opacity: 0.6; }
+.world-btn:focus-visible { outline: 3px solid #4a9bd8; outline-offset: 2px; }
+@media (max-width: 520px) { .world-btn .wb-n { display: none; } .world-btn.here .wb-n { display: inline; } }
